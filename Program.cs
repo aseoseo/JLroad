@@ -39,8 +39,33 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("КРИТИЧЕСКАЯ ОШИБКА: Строка подключения DefaultConnection не найдена ни в appsettings, ни в переменных окружения Railway!");
+    throw new InvalidOperationException("КРИТИЧЕСКАЯ ОШИБКА: Строка подключения DefaultConnection не найдена!");
 }
+
+// АВТОМАТИЧЕСКИЙ КАНВЕРТЕР: Если Railway прислал строку в формате postgresql://, пересобираем её для EF Core
+if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+{
+    try
+    {
+        var uri = new Uri(connectionString);
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        var host = uri.Host;
+        var port = uri.Port;
+        var database = uri.AbsolutePath.TrimStart('/');
+
+        // Формируем валидный для Npgsql Connection String
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};Include Error Detail=true;";
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Ошибка автоматического парсинга DATABASE_URL: {ex.Message}", ex);
+    }
+}
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));builder.Services.AddScoped<JwtTokenService>();
