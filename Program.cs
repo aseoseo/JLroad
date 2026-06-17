@@ -81,7 +81,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/collab"))
-                {
+                {                     
                     context.Token = accessToken;
                 }
                 return Task.CompletedTask;
@@ -102,6 +102,36 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
+
+    // =================================================================================
+    // АВТОЗАПОЛНЕНИЕ (SEED): Создаем дефолтного ментора с валидным хэшем пароля
+    try
+    {
+        if (!db.Users.Any())
+        {
+            var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AppUser>>();
+            var defaultMentor = new AppUser
+            {
+                Email = "mentor@jiroad.by",
+                UserName = "mentor",
+                Role = "Mentor",
+                MentorCode = "JR-777777",
+                CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc)
+            };
+            
+            // Хэшируем пароль встроенными средствами безопасности .NET
+            defaultMentor.PasswordHash = hasher.HashPassword(defaultMentor, "Password123!");
+            
+            db.Users.Add(defaultMentor);
+            db.SaveChanges();
+            Console.WriteLine("[SEED]: Преподаватель mentor@jiroad.by успешно создан с паролем 'Password123!'");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[SEED ERROR]: Не удалось создать дефолтного пользователя: {ex.Message}");
+    }
+    // =================================================================================
 
     // ИСПРАВЛЕНО ДЛЯ POSTGRESQL: Экранирование имен в верхнем регистре кавычками для информационного каталога
     try
@@ -150,7 +180,6 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
-
 
 var api = app.MapGroup("/api");
 
