@@ -25,16 +25,26 @@ builder.Configuration
     .AddEnvironmentVariables(); // Читает переменные из облака (ConnectionStrings__DefaultConnection)
 
 // Add services to the container.
+// Add services to the container.
 builder.Services.AddHttpClient<AiService>();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 
-// СКОРРЕКТИРОВАНО: Инициализация контекста
+// УЛЬТРА-ОТКАЗОУСТОЙЧИВАЯ НАСТРОЙКА ПОДКЛЮЧЕНИЯ: Проверяет GetConnectionString, переменную окружения и прямую переменную Railway
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+                       ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+                       ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("КРИТИЧЕСКАЯ ОШИБКА: Строка подключения DefaultConnection не найдена ни в appsettings, ни в переменных окружения Railway!");
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<JwtTokenService>();
+    options.UseNpgsql(connectionString));builder.Services.AddScoped<JwtTokenService>();
+
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "change-this-super-secret-key-32-chars";
