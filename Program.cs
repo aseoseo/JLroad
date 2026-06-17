@@ -15,34 +15,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc;
 
+// В самом начале Program.cs, сразу после создания builder
 var builder = WebApplication.CreateBuilder(args);
 
-// КОРРЕКТНАЯ НАСТРОЙКА: Дополняем конфигурацию без полной очистки системных источников Railway
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
-    .AddEnvironmentVariables(); // Читает переменные из облака (ConnectionStrings__DefaultConnection)
+// Добавляем поддержку переменных окружения явно
+builder.Configuration.AddEnvironmentVariables();
 
-// Add services to the container.
-// Add services to the container.
-builder.Services.AddHttpClient<AiService>();
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-builder.Services.AddSignalR();
-builder.Services.AddHttpClient();
-
-// УЛЬТРА-ОТКАЗОУСТОЙЧИВАЯ НАСТРОЙКА ПОДКЛЮЧЕНИЯ: Проверяет GetConnectionString, переменную окружения и прямую переменную Railway
+// Настройка базы данных с приоритетом на переменные окружения
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-                       ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+                       ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
-// Если пришла строка в формате postgresql://..., конвертируем её
-if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgresql://"))
-{
-    var uri = new Uri(connectionString);
-    var userInfo = uri.UserInfo.Split(':');
-    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};Include Error Detail=true;";
-}
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
