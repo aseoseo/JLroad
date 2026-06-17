@@ -86,6 +86,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddAntiforgery();
 builder.Services.AddSignalR();
+builder.Services
+    .AddRazorComponents()
+    .AddInteractiveServerComponents();
 
 var app = builder.Build();
 
