@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc;
 
+
 // В самом начале Program.cs, сразу после создания builder
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,7 @@ if (connectionString.StartsWith("postgresql://"))
 
 // 3. ОДИН РАЗ регистрируем контекст
 Console.WriteLine(connectionString);
+builder.Services.AddAntiforgery();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
@@ -81,13 +83,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-
+builder.Services.AddAntiforgery();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
 
     // ИСПРАВЛЕНО ДЛЯ POSTGRESQL: Экранирование имен в верхнем регистре кавычками для информационного каталога
     try
@@ -136,6 +138,7 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
 
 var api = app.MapGroup("/api");
 
