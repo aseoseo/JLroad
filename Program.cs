@@ -15,10 +15,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc;
 
-
 // В самом начале Program.cs, сразу после создания builder
-
 var builder = WebApplication.CreateBuilder(args);
+
+// Явно добавляем чтение переменных окружения Linux/Railway
+builder.Configuration.AddEnvironmentVariables();
 
 // 1. Получаем строку из Railway или appsettings
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -44,12 +45,17 @@ if (connectionString.StartsWith("postgresql://"))
         $"Trust Server Certificate=true;";
 }
 
-// 3. ОДИН РАЗ регистрируем контекст
-Console.WriteLine(connectionString);
+// Выводим строку в лог для проверки
+Console.WriteLine($"[DB INITIALIZATION]: Итоговая строка подключения сформирована.");
 
+// 3. ЧИСТАЯ РЕГИСТРАЦИЯ КОНТЕКСТА И СЕРВИСОВ БЕЗ ДУБЛИРОВАНИЯ
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
+// Регистрируем сервисы приложения в DI контейнере
+builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<AiService>(); // Зависимость для AI-функционала дорожных карт и тестов
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+builder.Services.AddHttpClient(); // Для корректной работы внутренних HTTP-запросов к Gemini API
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "change-this-super-secret-key-32-chars";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "JIroad";
