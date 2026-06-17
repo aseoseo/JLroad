@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 
 
 // В самом начале Program.cs, сразу после создания builder
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Получаем строку из Railway или appsettings
@@ -45,7 +46,7 @@ if (connectionString.StartsWith("postgresql://"))
 
 // 3. ОДИН РАЗ регистрируем контекст
 Console.WriteLine(connectionString);
-builder.Services.AddAntiforgery();
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
@@ -84,6 +85,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddAntiforgery();
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
