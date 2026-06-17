@@ -1,0 +1,157 @@
+@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>JIroad</PageTitle>
+
+<section id="introSplash" class="intro-splash" aria-label="JIroad intro">
+    <div class="hero-logo-wrap intro-logo" id="heroLogoWrap" aria-hidden="true">
+        <svg class="hero-logo-svg" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="800" height="800" rx="40" fill="#0A1730"/>
+            <path class="anim-left" d="M250 560C290 470 330 390 390 300" stroke="#38BDF8" stroke-width="70" stroke-linecap="round" fill="none" opacity="0.95"/>
+            <path class="anim-right" d="M550 560C500 470 460 390 410 300" stroke="#60A5FA" stroke-width="70" stroke-linecap="round" fill="none" opacity="0.95"/>
+            <path class="anim-road" d="M400 620C400 500 410 400 400 300" stroke="#1D4ED8" stroke-width="95" stroke-linecap="round" fill="none"/>
+            <path class="anim-road-dash" d="M400 590C400 500 408 410 400 330" stroke="#DBEAFE" stroke-width="10" stroke-linecap="round" stroke-dasharray="20 24" fill="none" opacity="0.9"/>
+            <g class="anim-pin">
+                <path d="M400 130C350 130 310 170 310 220C310 300 400 370 400 370C400 370 490 300 490 220C490 170 450 130 400 130Z" fill="#2563EB"/>
+                <circle cx="400" cy="220" r="38" fill="#93C5FD"/>
+            </g>
+            <g class="anim-cap" transform="translate(170 390)">
+                <path d="M0 30L70 0L140 30L70 60L0 30Z" fill="#334155"/>
+                <path d="M40 48V90" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
+                <circle cx="40" cy="98" r="7" fill="#334155"/>
+            </g>
+            <g class="anim-flag" transform="translate(560 380)">
+                <line x1="0" y1="0" x2="0" y2="110" stroke="#1E293B" stroke-width="10" stroke-linecap="round"/>
+                <path d="M0 10C30 0 50 20 75 10V55C50 65 30 45 0 55V10Z" fill="#3B82F6"/>
+            </g>
+            <text class="anim-text" x="400" y="720" text-anchor="middle" font-family="Poppins, Arial, sans-serif" font-size="92" font-weight="700" fill="#E2E8F0">JIroad</text>
+            <ellipse class="anim-shadow" cx="400" cy="740" rx="180" ry="24" fill="#2563EB" opacity="0.18"/>
+        </svg>
+    </div>
+</section>
+
+<main class="site site-main">
+    <header class="mammut-nav page-enter">
+        <div class="mammut-utility">
+            <span>Платформа JIroad</span>
+            <div class="mammut-utility-links">
+                <AuthorizeView>
+                    <Authorized>
+                        <a href="/library">Публичные roadmap</a>
+                        <a href="/search">Поиск</a>
+                        @if (context.User.IsInRole("Mentor") || context.User.IsInRole("Admin"))
+                        {
+                            <a href="/mentor/dashboard">Панель отслеживания</a>
+                        }
+                        else
+                        {
+                            <a href="/dashboard">Рабочая зона</a>
+                        }
+                    </Authorized>
+                    <NotAuthorized>
+                        <span style="color: #64748b; font-size: 0.85rem; padding-right: 15px;">🔒 Авторизуйтесь для доступа к инструментам</span>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+        <div class="mammut-main">
+            <a href="/" class="mammut-logo">JIroad</a>
+            <nav class="mammut-links">
+                <a href="#features">Возможности</a>
+                <a href="/library">Дорожные карты</a>
+                <a href="/collaboration">Совместная работа</a>
+                <a href="#contacts">Контакты</a>
+            </nav>
+            
+            <div class="mammut-actions">
+                <AuthorizeView>
+                    <Authorized>
+                        <button type="button" class="ghost" @onclick='() => Nav.NavigateTo("/profile")'>Профиль</button>
+                        @if (context.User.IsInRole("Mentor") || context.User.IsInRole("Admin"))
+                        {
+                            <button type="button" class="cta" @onclick='() => Nav.NavigateTo("/mentor/dashboard")'>Панель Mentora</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="cta" @onclick='() => Nav.NavigateTo("/dashboard")'>Рабочая зона</button>
+                        }
+                    </Authorized>
+                    <NotAuthorized>
+                        <button type="button" class="ghost" @onclick="OpenAuthModal">Войти</button>
+                        <button type="button" class="cta" @onclick="OpenAuthModal">Регистрация</button>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero hero-centered page-enter">
+        <p class="eyebrow">Дорожные карты обучения</p>
+        <h1>Построй свой путь обучения в одном пространстве</h1>
+        <p class="lead">Создавай, связывай и проходи roadmap с визуальной структурой и персональными подсказками.</p>
+        <div class="hero-actions">
+            <AuthorizeView>
+                <Authorized>
+                    @if (context.User.IsInRole("Mentor") || context.User.IsInRole("Admin"))
+                    {
+                        <button type="button" class="cta start-btn" @onclick='() => Nav.NavigateTo("/mentor/dashboard")'>Открыть треки студентов</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="cta start-btn" @onclick='() => Nav.NavigateTo("/dashboard")'>В рабочую зону</button>
+                    }
+                </Authorized>
+                <NotAuthorized>
+                    <button type="button" class="cta start-btn" @onclick="OpenAuthModal">Начать работу</button>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </section>
+
+    <section id="features" class="panel page-enter">
+        <h2>Ключевые возможности</h2>
+        <div class="cards">
+            <article>Infinite Canvas</article>
+            <article>Бесконечный холст</article>
+            <article>ИИ-генерация roadmap</article>
+            <article>Аналитика прогресса</article>
+            <article>Совместная работа</article>
+            <article>Экспорт: JSON / PNG / SVG / PDF / CSV</article>
+            <article>Гибкая настройка узлов и связей</article>
+        </div>
+    </section>
+
+    <footer id="contacts" class="panel page-enter">
+        <h2>Контакты</h2>
+        <div class="hero-actions">
+            <a href="/dashboard" class="ghost">Документация</a>
+            <a href="https://github.com/" target="_blank" class="ghost">GitHub</a>
+            <a href="/403" class="ghost">Пользовательское соглашение</a>
+            <a href="/403" class="ghost">Политика конфиденциальности</a>
+        </div>
+    </footer>
+</main>
+
+@if (showAuthModal)
+{
+    <div class="auth-modal-backdrop" @onclick="CloseAuthModal">
+        <section class="auth-modal" @onclick:stopPropagation="true">
+            <h2>Добро пожаловать в JIroad</h2>
+            <p>Выберите действие для продолжения работы.</p>
+            <div class="auth-modal-actions">
+                <a class="cta" href="/auth/login">Авторизация</a>
+                <a class="ghost" href="/auth/register">Регистрация</a>
+            </div>
+            <button type="button" class="ghost" @onclick="CloseAuthModal">Закрыть</button>
+        </section>
+    </div>
+}
+
+@code {
+    private bool showAuthModal;
+
+    private void OpenAuthModal() => showAuthModal = true;
+    private void CloseAuthModal() => showAuthModal = false;
+}

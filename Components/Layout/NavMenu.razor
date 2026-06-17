@@ -1,0 +1,159 @@
+﻿@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a class="navbar-brand" href="">JIroad</a>
+        
+        @if (isLoggedIn)
+        {
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" 
+                 style="width: 32px; height: 32px; font-size: 14px; border: 2px solid #fff;"
+                 title="Профиль активен">
+                U
+            </div>
+        }
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="counter">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="weather">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="help">
+                <span class="bi bi-journal-bookmark-fill" aria-hidden="true" style="margin-right: 8px;"></span> Справка
+            </NavLink>
+        </div>
+
+        @if (isChecking)
+        {
+            @* Блок ожидания завершения проверки токена *@
+        }
+        else if (isLoggedIn)
+        {
+             <div class="nav-item px-3">
+                <NavLink class="nav-link" href="profile">
+                    <span class="bi bi-person-fill" aria-hidden="true" style="margin-right: 8px;"></span> Профиль
+                </NavLink>
+            </div>
+            
+             <div class="nav-item px-3">
+                <NavLink class="nav-link" href="dashboard">
+                    <span class="bi bi-grid-fill" aria-hidden="true" style="margin-right: 8px;"></span> Мои Roadmap
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3 border-top mt-2 pt-2">
+                <a class="nav-link text-danger" style="cursor: pointer;" @onclick="Logout">
+                    <span class="bi bi-box-arrow-right" aria-hidden="true" style="margin-right: 8px;"></span> Выход
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3 border-top mt-2 pt-2">
+                <NavLink class="nav-link" href="auth/login">
+                    <span class="bi bi-box-arrow-in-right" aria-hidden="true" style="margin-right: 8px;"></span> Вход
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="auth/register">
+                    <span class="bi bi-person-plus-fill" aria-hidden="true" style="margin-right: 8px;"></span> Регистрация
+                </NavLink>
+            </div>
+        }
+    </nav>
+</div>
+
+@code {
+    private bool isChecking = true;
+    private bool isLoggedIn = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try 
+            {
+                // Автоматический поиск JWT токена по сигнатуре 'eyJ' во всех хранилищах браузера
+                var token = await Js.InvokeAsync<string>("eval", @"
+                    (() => {
+                        for (let i = 0; i < localStorage.length; i++) {
+                            let k = localStorage.key(i);
+                            let v = localStorage.getItem(k);
+                            if (v && v.startsWith('eyJ')) return v;
+                        }
+                        for (let i = 0; i < sessionStorage.length; i++) {
+                            let k = sessionStorage.key(i);
+                            let v = sessionStorage.getItem(k);
+                            if (v && v.startsWith('eyJ')) return v;
+                        }
+                        return null;
+                    })()
+                ");
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    isLoggedIn = true;
+                }
+            }
+            catch 
+            {
+                // Игнорируем серверные ошибки обращения к JS на этапе пререндеринга в Linux-контейнере
+            }
+            finally
+            {
+                isChecking = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task Logout()
+    {
+        try 
+        {
+            // Очищаем любые сохраненные сессии и JWT токены
+            await Js.InvokeVoidAsync("eval", @"
+                (() => {
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        let k = localStorage.key(i);
+                        let v = localStorage.getItem(k);
+                        if (v && v.startsWith('eyJ')) localStorage.removeItem(k);
+                    }
+                    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                        let k = sessionStorage.key(i);
+                        let v = sessionStorage.getItem(k);
+                        if (v && v.startsWith('eyJ')) sessionStorage.removeItem(k);
+                    }
+                    try { localStorage.removeItem('token'); } catch(e){}
+                    try { jiroad.removeToken(); } catch(e){}
+                })()
+            ");
+        }
+        catch { }
+
+        isLoggedIn = false;
+        // Перезагружаем страницу на корень, чтобы гарантировать очистку стейта в контейнере Docker
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+}

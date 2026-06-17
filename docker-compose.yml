@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: jiroad-postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_password
+      POSTGRES_DB: jiroad_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jiroad-blazor-app
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=jiroad_db;Username=postgres;Password=your_password"
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:

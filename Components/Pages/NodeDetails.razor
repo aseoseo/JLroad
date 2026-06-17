@@ -1,0 +1,412 @@
+@page "/node/{NodeId:int}"
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using JIroad.Api
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Детали этапа | JIroad</PageTitle>
+
+<div class="node-details-container" style="max-width: 800px; margin: 2rem auto; padding: 2rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+    @if (node is null)
+    {
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+    }
+    else
+    {
+        <header style="border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" style="margin-bottom: 1rem;" @onclick="GoBackToCanvas">← Вернуться к карте</button>
+                <h1 style="font-size: 1.75rem; color: #0f172a; margin: 0;">@node.Title</h1>
+                <p style="color: #64748b; margin: 0.5rem 0 0 0;">Тип: <b>@LocalizeType(node.Type)</b> | Сложность: <b>@node.Difficulty</b></p>
+            </div>
+            <span class="badge @(node.Status == "Completed" ? "bg-success" : node.Status == "In Progress" ? "bg-primary" : "bg-secondary")" style="padding: 0.6rem 1rem; font-size: 0.9rem;">
+                @GetStatusText(node.Status)
+            </span>
+        </header>
+
+        <section style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem;">
+            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem; color: #334155; display: flex; align-items: center; gap: 0.5rem;">
+                📊 Прогресс выполнения этапа
+            </h3>
+            
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem;">
+                <div style="flex: 1; display: flex; align-items: center; gap: 1rem;">
+                    <input type="range" min="0" max="100" class="form-range" style="flex: 1;" value="@node.Progress" @onchange="HandleProgressSliderChange" />
+                    <span style="font-size: 1.1rem; font-weight: bold; color: #0f172a; min-width: 50px; text-align: right;">
+                        @node.Progress%
+                    </span>
+                </div>
+        
+                @if (node.Status != "Completed")
+                {
+                    <button class="btn btn-success" style="display: flex; align-items: center; gap: 0.4rem; font-weight: 500;" @onclick="MarkAsCompleted">
+                        ✓ Завершить этап
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-secondary" style="font-size: 0.85rem;" @onclick="ResetProgress">
+                        Сбросить прогресс
+                    </button>
+                }
+            </div>
+
+            <div class="progress" style="height: 8px; border-radius: 4px; background-color: #e2e8f0; overflow: hidden;">
+                <div class="progress-bar @(node.Progress == 100 ? "bg-success" : "bg-primary")" role="progressbar" style="width: @node.Progress%; transition: width 0.3s ease;" aria-valuenow="@node.Progress" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </section>
+
+        <section style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.2rem; color: #1e293b;">Описание</h3>
+            <p style="color: #334155; line-height: 1.6; white-space: pre-wrap;">
+                @(string.IsNullOrWhiteSpace(node.Description) ? "Описание для этого этапа отсутствует." : node.Description)
+            </p>
+        </section>
+
+        @if (personalTasks != null && personalTasks.Any())
+        {
+            <section style="margin-bottom: 2rem; padding: 1.25rem; border: 1px solid #f3e8ff; background: #faf5ff; border-radius: 8px;">
+                <h3 style="font-size: 1.1rem; color: #6b21a8; margin-top: 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    ✨ Персональное задание от наставника
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    @foreach (var task in personalTasks)
+                    {
+                        <div style="padding: 1rem; background: #ffffff; border: 1px solid #e9d5ff; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                    <span class="badge" style="background-color: #a855f7; color: white;">
+                                        @(task.TaskType switch { "Video" => "🎬 Видеоматериал", "Link" => "🔗 Ресурс / Ссылка", _ => "📝 Задание" })
+                                    </span>
+                                    <strong style="color: #581c87; font-size: 0.95rem;">@task.Title</strong>
+                                </div>
+                                @if (task.TaskType == "Video" || task.TaskType == "Link")
+                                {
+                                    <a href="@task.Content" target="_blank" style="color: #2563eb; font-weight: 500; text-decoration: none; font-size: 0.9rem; word-break: break-all;">
+                                        🌐 Открыть прикрепленный ресурс
+                                    </a>
+                                }
+                                else
+                                {
+                                    <p style="margin: 0; color: #334155; font-size: 0.9rem; white-space: pre-wrap;">@task.Content</p>
+                                }
+                            </div>
+                            <span class="badge" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; background-color: @(task.Status == "Approved" ? "#22c55e" : "#e2e8f0"); color: @(task.Status == "Approved" ? "#fff" : "#475569");">
+                                @(task.Status switch { "Assigned" => "Выдано", "Submitted" => "На проверке", "Approved" => "Принято", _ => "Доработка" })
+                            </span>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+
+        <section style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+                <h3 style="font-size: 1.2rem; color: #1e293b; margin: 0;">📚 Обучающие материалы</h3>
+                <button class="btn btn-sm btn-primary" @onclick="() => _showAddMaterial = true">+ Добавить material</button>
+            </div>
+
+            @if (_showAddMaterial)
+            {
+                <form @onsubmit="AddMaterial" style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+                    <div class="mb-2">
+                        <input class="form-control form-control-sm" placeholder="Название материала" @bind="_newMaterialTitle" required />
+                    </div>
+                    <div class="mb-2">
+                        <input class="form-control form-control-sm" placeholder="Ссылка (URL)" @bind="_newMaterialUrl" required />
+                    </div>
+                    <div class="mb-2">
+                        <select class="form-select form-select-sm" @bind="_newMaterialType">
+                            <option value="Article">Статья / Документация</option>
+                            <option value="Video">Видео-урок</option>
+                            <option value="Course">Курс</option>
+                            <option value="Book">Книга</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button type="button" class="btn btn-sm btn-light" @onclick="() => _showAddMaterial = false">Отмена</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            }
+
+            @if (materials.Count == 0)
+            {
+                <p class="text-muted" style="font-size: 0.9rem; font-style: italic;">Пока нет добавленных материалов для изучения.</p>
+            }
+            else
+            {
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    @foreach (var m in materials)
+                    {
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;">
+                            <div>
+                                <span class="badge bg-light text-dark" style="margin-right: 0.5rem;">@LocalizeMaterialType(m.MaterialType)</span>
+                                <a href="@m.Url" target="_blank" style="font-weight: 500; color: #2563eb; text-decoration: none;">@m.Title</a>
+                            </div>
+                            <button class="btn btn-sm text-danger" style="border: none; background: transparent;" @onclick="() => DeleteMaterial(m.Id)">🗑</button>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+
+        <section style="margin-top: 3rem;">
+            <h3 style="font-size: 1.2rem; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">💬 Обсуждение этапа</h3>
+            
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <input class="form-control" placeholder="Напишите комментарий или задайте вопрос..." @bind="_newCommentText" />
+                <button class="btn btn-primary" @onclick="AddComment">Отправить</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                @foreach (var c in comments)
+                {
+                    <div style="padding: 1rem; border-radius: 8px; background: @(c.AuthorRole == "Mentor" ? "#f0f9ff" : "#f8fafc"); border: 1px solid @(c.AuthorRole == "Mentor" ? "#bae6fd" : "#e2e8f0");">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                            <span style="font-size: 0.8rem; font-weight: bold; color: @(c.AuthorRole == "Mentor" ? "#0369a1" : "#475569");">
+                                @(c.AuthorRole == "Mentor" ? "👨‍🏫 Ментор" : "🎓 Студент")
+                            </span>
+                            <span style="font-size: 0.75rem; color: #94a3b8;">@c.CreatedAtUtc.ToLocalTime().ToString("g")</span>
+                        </div>
+                        <p style="margin: 0; color: #334155; font-size: 0.95rem;">@c.Text</p>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public int NodeId { get; set; }
+    [UrlParameter] public int RoadmapId { get; set; } 
+
+    private string token = "";
+    private NodeResponse? node = null;
+    private List<MaterialResponse> materials = new();
+    private List<CommentResponse> comments = new();
+    private List<PersonalTaskDto> personalTasks = new(); 
+
+    private bool _showAddMaterial = false;
+    private string _newMaterialTitle = "";
+    private string _newMaterialUrl = "";
+    private string _newMaterialType = "Article";
+    private string _newCommentText = "";
+
+    public class PersonalTaskDto
+    {
+        public int Id { get; set; }
+        public string TaskType { get; set; } = "Text";
+        public string Title { get; set; } = "";
+        public string Content { get; set; } = "";
+        public string Status { get; set; } = "Assigned";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("RoadmapId", out var rIdStr))
+        {
+            int.TryParse(rIdStr, out var rId);
+            RoadmapId = rId;
+        }
+
+        token = await Js.InvokeAsync<string>("jiroad.loadToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Nav.NavigateTo("/auth/login", true);
+            return;
+        }
+        await LoadNodeDetails();
+    }
+
+    private HttpClient Client()
+    {
+        // ИСПРАВЛЕНО: Умное переключение адреса хоста при развертывании в Docker
+        string baseAddress = Nav.BaseUri;
+        if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        {
+            baseAddress = "http://127.0.0.1:8080/";
+        }
+
+        var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return http;
+    }
+
+ private async Task LoadNodeDetails()
+{
+    using var http = Client();
+    
+    // 1. Загружаем узлы текущей карты
+    var apiNodes = await http.GetFromJsonAsync<List<NodeResponse>>($"/api/roadmap/{RoadmapId}/nodes") ?? new();
+    node = apiNodes.FirstOrDefault(x => x.Id == NodeId);
+
+    if (node is null) return;
+    
+    Console.WriteLine($"[DIAGNOSTIC] Кликнули на узел студента: ID={node.Id}, Title='{node.Title}', RoadmapId={RoadmapId}");
+
+    // Определяем целевой ID карты для материалов
+    int targetRoadmapIdForMaterials = RoadmapId >= 200 ? 100 : RoadmapId;
+
+    // Загружаем ВСЕ материалы мастер-карты
+    var allMaterials = await http.GetFromJsonAsync<List<MaterialResponse>>($"/api/roadmap/{targetRoadmapIdForMaterials}/materials") ?? new();
+    Console.WriteLine($"[DIAGNOSTIC] Загружено материалов из карты {targetRoadmapIdForMaterials}: {allMaterials.Count} шт.");
+
+    if (RoadmapId >= 200)
+    {
+        // Загружаем узлы преподавателя для сопоставления
+        var mentorNodes = await http.GetFromJsonAsync<List<NodeResponse>>("/api/roadmap/100/nodes") ?? new();
+        Console.WriteLine($"[DIAGNOSTIC] Загружено узлов преподавателя (карта 100): {mentorNodes.Count} шт.");
+
+        // Ищем узел ментора с ТОЧНО таким же названием
+        // Trim() убирает случайные пробелы в начале/конце, а StringComparison игнорирует регистр букв
+        var correspondingMentorNode = mentorNodes.FirstOrDefault(x => 
+            x.Title?.Trim().Equals(node.Title?.Trim(), StringComparison.OrdinalIgnoreCase) == true);
+
+        if (correspondingMentorNode != null)
+        {
+            Console.WriteLine($"[DIAGNOSTIC] Узел успешно сопоставлен! Найдено совпадение у ментора: ID={correspondingMentorNode.Id}");
+            materials = allMaterials.Where(x => x.NodeId == correspondingMentorNode.Id).ToList();
+            Console.WriteLine($"[DIAGNOSTIC] Найдено материалов для этого узла: {materials.Count} шт.");
+        }
+        else
+        {
+            Console.WriteLine($"[DIAGNOSTIC] ВНИМАНИЕ! Не удалось найти узел ментора с названием '{node.Title}'");
+            materials = new();
+        }
+    }
+    else
+    {
+        materials = allMaterials.Where(x => x.NodeId == NodeId).ToList();
+    }
+
+    // Оставшаяся часть логики (комментарии и задачи)
+    comments = await http.GetFromJsonAsync<List<CommentResponse>>($"/api/roadmap/{RoadmapId}/comments") ?? new();
+    comments = comments.Where(x => x.NodeId == NodeId).ToList();
+
+    try
+    {
+        personalTasks = await http.GetFromJsonAsync<List<PersonalTaskDto>>($"/api/roadmap/mentor/students/personal-tasks/{RoadmapId}") ?? new();
+    }
+    catch { personalTasks = new(); }
+
+    StateHasChanged();
+}
+
+    private async Task HandleProgressSliderChange(ChangeEventArgs e)
+    {
+        if (node is null || e.Value is null) return;
+        if (int.TryParse(e.Value.ToString(), out int newProgress))
+        {
+            string newStatus = "In Progress";
+            if (newProgress == 100) newStatus = "Completed";
+            else if (newProgress == 0) newStatus = "Planned";
+            node = node with { Progress = newProgress, Status = newStatus };
+            await SaveNodeState();
+        }
+    }
+
+    private async Task MarkAsCompleted()
+    {
+        if (node is null) return;
+        node = node with { Progress = 100, Status = "Completed" };
+        await SaveNodeState();
+    }
+
+    private async Task ResetProgress()
+    {
+        if (node is null) return;
+        node = node with { Progress = 0, Status = "Planned" };
+        await SaveNodeState();
+    }
+
+    private async Task SaveNodeState()
+    {
+        if (node is null) return;
+        using var http = Client();
+        
+        var payload = new NodeRequest(
+            node.RoadmapId, node.Title, node.Description, node.Resource, node.Type, 
+            node.Difficulty, node.Status, node.Progress, node.Tags, node.PositionX, node.PositionY
+        );
+        var response = await http.PutAsJsonAsync($"/api/roadmap/nodes/{node.Id}", payload);
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadNodeDetails();
+        }
+    }
+
+    private async Task AddMaterial()
+    {
+        if (node is null) return;
+        using var http = Client();
+        var payload = new MaterialRequest(RoadmapId, NodeId, _newMaterialTitle, "", _newMaterialType, _newMaterialUrl);
+        var response = await http.PostAsJsonAsync("/api/roadmap/materials", payload);
+        if (response.IsSuccessStatusCode)
+        {
+            _newMaterialTitle = "";
+            _newMaterialUrl = "";
+            _showAddMaterial = false;
+            await LoadNodeDetails();
+        }
+    }
+
+    private async Task DeleteMaterial(int id)
+    {
+        using var http = Client();
+        await http.DeleteAsync($"/api/roadmap/materials/{id}");
+        await LoadNodeDetails();
+    }
+
+    private async Task AddComment()
+    {
+        if (string.IsNullOrWhiteSpace(_newCommentText)) return;
+        using var http = Client();
+        var payload = new CommentRequest(RoadmapId, NodeId, _newCommentText);
+        var response = await http.PostAsJsonAsync("/api/roadmap/comments", payload);
+        if (response.IsSuccessStatusCode)
+        {
+            _newCommentText = "";
+            await LoadNodeDetails();
+        }
+    }
+
+    private void GoBackToCanvas()
+    {
+        Nav.NavigateTo($"/canvas/{RoadmapId}");
+    }
+
+    private static string LocalizeType(string type) => type switch
+    {
+        "Topic" => "Тема",
+        "Skill" => "Навык",
+        "Project" => "Проект",
+        "Test" => "Тест",
+        "Milestone" => "Контрольная точка",
+        _ => type
+    };
+
+    private static string LocalizeMaterialType(string type) => type switch
+    {
+        "Article" => "📄 Статья",
+        "Video" => "🎥 Видео",
+        "Course" => "🎓 Курс",
+        "Book" => "📚 Книга",
+        _ => type
+    };
+
+    private static string GetStatusText(string status) => status switch
+    {
+        "Planned" => "Не начато",
+        "In Progress" => "В процессе",
+        "Completed" => "Завершено",
+        _ => status
+    };
+
+    [AttributeUsage(AttributeTargets.Property)]
+    private class UrlParameterAttribute : Attribute { }
+}

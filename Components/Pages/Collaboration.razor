@@ -1,0 +1,85 @@
+@page "/collaboration"
+@layout WorkspaceLayout
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Совместная работа | JIroad</PageTitle>
+
+<h1>Совместная работа</h1>
+<section class="panel">
+    <h2>Приглашение участника</h2>
+    <form class="editor" @onsubmit="SendInvite" @onsubmit:preventDefault="true">
+        <input type="number" placeholder="Roadmap ID" @bind="roadmapId"/>
+        <input placeholder="Email участника" @bind="email"/>
+        <select @bind="role"><option>Editor</option><option>Viewer</option></select>
+        <button type="submit">Пригласить</button>
+    </form>
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <p class="fine">@message</p>
+    }
+</section>
+
+<section class="panel">
+    <h2>Список приглашений</h2>
+    <div class="comments">
+        @foreach (var invite in invites)
+        {
+            <article>
+                <strong>Roadmap #@invite.RoadmapId</strong>
+                <p>@invite.Email · @invite.Role · @invite.Status</p>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    private string token = "";
+    private int roadmapId;
+    private string email = "";
+    private string role = "Editor";
+    private string message = "";
+    private List<InviteDto> invites = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await Js.InvokeAsync<string>("jiroad.loadToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Nav.NavigateTo("/auth/login", true);
+            return;
+        }
+        await LoadInvites();
+    }
+
+    private HttpClient Client()
+    {
+        var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return http;
+    }
+
+    private async Task LoadInvites()
+    {
+        using var http = Client();
+        invites = await http.GetFromJsonAsync<List<InviteDto>>("/api/roadmap/invites") ?? [];
+    }
+
+    private async Task SendInvite()
+    {
+        using var http = Client();
+        var response = await http.PostAsJsonAsync("/api/roadmap/invites", new { roadmapId, email, role });
+        message = response.IsSuccessStatusCode ? "Приглашение отправлено." : "Ошибка отправки приглашения.";
+        await LoadInvites();
+    }
+
+    private sealed class InviteDto
+    {
+        public int RoadmapId { get; set; }
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string Status { get; set; } = "";
+    }
+}

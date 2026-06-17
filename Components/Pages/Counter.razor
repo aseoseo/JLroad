@@ -1,0 +1,45 @@
+﻿@page "/counter"
+@rendermode InteractiveServer
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    private int currentCount = 0;
+    private string token = "";
+
+    private async Task IncrementCount()
+    {
+        currentCount++;
+        
+        // Заготовка на будущее: если нужно будет синхронизировать клики с PostgreSQL через Docker API
+        // token = await Js.InvokeAsync<string>("jiroad.loadToken");
+        // if (!string.IsNullOrWhiteSpace(token)) { using var http = Client(); ... }
+    }
+
+    private HttpClient Client()
+    {
+        // Гарантируем бесперебойную маршрутизацию внутри Docker-сети при расширении функционала
+        string baseAddress = Nav.BaseUri;
+        if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        {
+            baseAddress = "http://127.0.0.1:8080/";
+        }
+
+        var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+        return http;
+    }
+}

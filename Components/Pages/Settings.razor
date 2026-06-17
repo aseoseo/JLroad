@@ -1,0 +1,146 @@
+@page "/settings"
+@layout WorkspaceLayout
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Настройки | JIroad</PageTitle>
+
+<button type="button" @onclick="GoBack" class="ghost" style="display: inline-flex; align-items: center; gap: 8px; border: none; padding: 5px 10px; margin-bottom: 20px; cursor: pointer; color: #64748B;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+    </svg>
+    Назад
+</button>
+
+<h1>Настройки</h1>
+
+<section class="panel">
+    <h2>Профиль</h2>
+    <form class="editor" @onsubmit="SaveProfile" @onsubmit:preventDefault="true">
+        <input placeholder="Имя" @bind="profile.UserName"/>
+        <input placeholder="Аватар URL" @bind="profile.AvatarUrl"/>
+        <input placeholder="Описание" @bind="profile.Bio"/>
+        <button type="submit">Сохранить профиль</button>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Интерфейс</h2>
+    <form class="editor" @onsubmit="SaveProfile" @onsubmit:preventDefault="true">
+        <select @bind="language"><option>RU</option><option>EN</option></select>
+        <select @bind="theme"><option>Light</option><option>Dark</option></select>
+        <input type="range" min="90" max="120" value="100"/>
+        <button type="submit">Сохранить интерфейс</button>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Безопасность и интеграции</h2>
+    <form class="editor" @onsubmit="ChangePassword" @onsubmit:preventDefault="true">
+        <input type="password" placeholder="Текущий пароль" @bind="currentPassword"/>
+        <input type="password" placeholder="Новый пароль" @bind="newPassword"/>
+        <button type="submit">Сменить пароль</button>
+    </form>
+    <label><input type="checkbox"/> Двухфакторная авторизация</label>
+    <label><input type="checkbox"/> Google Drive</label>
+    <label><input type="checkbox"/> GitHub</label>
+    <label><input type="checkbox"/> Notion</label>
+    <label><input type="checkbox"/> Discord</label>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <p class="fine">@message</p>
+}
+
+@code {
+    private ProfileDto profile = new();
+    private string language = "RU";
+    private string theme = "Light";
+    private string currentPassword = "";
+    private string newPassword = "";
+    private string message = "";
+    private string token = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await Js.InvokeAsync<string>("jiroad.loadToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Nav.NavigateTo("/auth/login", true);
+            return;
+        }
+        try
+        {
+            using var http = CreateClient();
+            profile = await http.GetFromJsonAsync<ProfileDto>("/api/roadmap/profile") ?? new ProfileDto();
+        }
+        catch (Exception ex)
+        {
+            message = $"Ошибка загрузки данных профиля: {ex.Message}";
+        }
+    }
+
+    private HttpClient CreateClient()
+    {
+        // ИСПРАВЛЕНО: Умное переключение BaseAddress при запуске внутри Docker-контейнера
+        string baseAddress = Nav.BaseUri;
+        if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        {
+            baseAddress = "http://127.0.0.1:8080/";
+        }
+
+        var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return http;
+    }
+
+    private async Task SaveProfile()
+    {
+        try
+        {
+            using var http = CreateClient();
+            var response = await http.PutAsJsonAsync("/api/roadmap/profile", new { userName = profile.UserName, avatarUrl = profile.AvatarUrl, bio = profile.Bio, language, theme });
+            message = response.IsSuccessStatusCode ? "Профиль обновлён." : "Ошибка обновления профиля.";
+        }
+        catch (Exception ex)
+        {
+            message = $"Ошибка соединения: {ex.Message}";
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        try
+        {
+            using var http = CreateClient();
+            var response = await http.PostAsJsonAsync("/api/roadmap/change-password", new { currentPassword, newPassword });
+            message = response.IsSuccessStatusCode ? "Пароль изменён." : "Не удалось сменить пароль.";
+        }
+        catch (Exception ex)
+        {
+            message = $"Ошибка смены пароля: {ex.Message}";
+        }
+        finally
+        {
+            currentPassword = "";
+            newPassword = "";
+        }
+    }
+
+    private async Task GoBack()
+    {
+        await Js.InvokeVoidAsync("history.back");
+    }
+
+    private sealed class ProfileDto
+    {
+        public string Email { get; set; } = "";
+        public string UserName { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string AvatarUrl { get; set; } = "";
+        public string Bio { get; set; } = "";
+    }
+}

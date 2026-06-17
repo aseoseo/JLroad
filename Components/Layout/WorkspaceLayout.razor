@@ -1,0 +1,278 @@
+@inherits LayoutComponentBase
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<div class="workspace-shell">
+    <aside class="workspace-sidebar">
+        <div class="sidebar-brand" @onclick='() => Nav.NavigateTo("/")'>
+            <span class="brand-logo">🛣️</span>
+            <span class="brand-text">JIroad</span>
+        </div>
+
+        @if (isLoaded)
+        {
+            <div class="user-brief-info">
+                <div class="user-avatar-mini">👤</div>
+                <div class="user-meta">
+                    <span class="user-name">@userEmail</span>
+                    <span class="user-role-badge">
+                        @(userRole == "Mentor" ? "Преподаватель" : userRole == "Admin" ? "Администратор" : "Слушатель")
+                    </span>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a class="menu-item" href="/profile">👤 Мой профиль</a>
+                <a class="menu-item" href="/library">📚 Библиотека шаблонов</a>
+                <a class="menu-item" href="/search">🔍 Поиск карт</a>
+
+                @if (userRole == "Mentor" || userRole == "Admin")
+                {
+                    <div class="menu-divider">Управление треками</div>
+                    <a class="menu-item active-panel-link" href="/mentor/dashboard">💼 Панель ментора</a>
+                    <a class="menu-item" href="/collaboration">👥 Совместная работа</a>
+                    
+                    @if (userRole == "Admin")
+                    {
+                        <a class="menu-item" href="/admin">⚙️ Администрирование</a>
+                    }
+                }
+                else
+                {
+                    <div class="menu-divider">Обучение</div>
+                    <a class="menu-item active-panel-link" href="/dashboard">🚀 Моя рабочая зона</a>
+                }
+
+                <div class="menu-divider">Система</div>
+                <a class="menu-item" href="/notifications">🔔 Уведомления</a>
+                
+                <a class="menu-item" href="/help">📖 Справка и помощь</a>
+            </nav>
+
+            <footer class="sidebar-footer">
+                <button type="button" class="logout-btn" @onclick="HandleLogout">
+                    ❌ Выйти из аккаунта
+                </button>
+            </footer>
+        }
+        else
+        {
+            <div style="padding: 1rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">
+                Загрузка интерфейса...
+            </div>
+        }
+    </aside>
+
+    <main class="workspace-main-content">
+        <div class="workspace-page-container">
+            @Body
+        </div>
+    </main>
+</div>
+
+<style>
+    .workspace-shell {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        min-height: 100vh;
+        background-color: #f8fafc;
+    }
+    .workspace-sidebar {
+        background-color: #0a1730;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        padding: 1.5rem 1rem;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        box-sizing: border-box;
+    }
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        margin-bottom: 2rem;
+        padding: 0 0.5rem;
+    }
+    
+    .brand-logo { font-size: 1.5rem; }
+    .brand-text { font-size: 1.25rem; font-weight: 800; letter-spacing: 0.05em; color: #fff; }
+    
+    .user-brief-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: rgba(255,255,255,0.05);
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+    .user-avatar-mini {
+        width: 38px;
+        height: 38px;
+        background: #1e293b;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+    }
+    .user-meta { display: flex; flex-direction: column; overflow: hidden; }
+    .user-name { font-size: 0.85rem; font-weight: 600; color: #f1f5f9; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px; }
+    .user-role-badge { font-size: 0.7rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; }
+
+    .sidebar-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1;
+    }
+    .menu-divider {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin: 1rem 0 0.25rem 0.5rem;
+        font-weight: 700;
+    }
+    .menu-item {
+        display: flex;
+        align-items: center;
+        padding: 0.7rem 0.85rem;
+        color: #94a3b8;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .menu-item:hover {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+    }
+    .sidebar-footer {
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .logout-btn {
+        width: 100%;
+        background: transparent;
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+        padding: 0.6rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .logout-btn:hover {
+        background: #ef4444;
+        color: #fff;
+    }
+    .workspace-main-content {
+        overflow-y: auto;
+        height: 100vh;
+        padding: 2rem;
+        box-sizing: border-box;
+    }
+    .workspace-page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+</style>
+
+@code {
+    private bool isLoaded = false;
+    private string userRole = "Student";
+    private string userEmail = "Пользователь";
+    private HubConnection? hubConnection;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var token = await Js.InvokeAsync<string>("jiroad.loadToken");
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    var handler = new JwtSecurityTokenHandler();
+                    if (handler.CanReadToken(token))
+                    {
+                        var jwtToken = handler.ReadJwtToken(token);
+                        userRole = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role || c.Type == "role")?.Value ?? "Student";
+                        userEmail = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email || c.Type == "email" || c.Type == ClaimTypes.Name)?.Value ?? "Пользователь";
+                    }
+
+                    // ИСПРАВЛЕНО ДЛЯ DOCKER: Защита базового адреса для реалтайм SignalR-соединений
+                    string baseHubUri = Nav.BaseUri;
+                    if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+                    {
+                        // Внутри Docker принудительно используем локальный сетевой интерфейс для серверной сборки SignalR
+                        baseHubUri = "http://127.0.0.1:8080/";
+                    }
+
+                    var targetHubUrl = new Uri(new Uri(baseHubUri), $"hubs/collab?access_token={token}").ToString();
+
+                    hubConnection = new HubConnectionBuilder()
+                        .WithUrl(targetHubUrl)
+                        .WithAutomaticReconnect()
+                        .Build();
+
+                    hubConnection.On<string>("NotificationReceived", async (targetUrl) =>
+                    {
+                        if (!string.IsNullOrEmpty(targetUrl) && targetUrl.StartsWith("/"))
+                        {
+                            bool wantNavigate = await Js.InvokeAsync<bool>("confirm", "🔔 Получено новое уведомление по вашему треку! Желаете перейти к объекту проверки?");
+                            if (wantNavigate)
+                            {
+                                Nav.NavigateTo(targetUrl, forceLoad: true);
+                            }
+                        }
+                    });
+
+                    await hubConnection.StartAsync();
+                }
+            }
+            catch
+            {
+                // Подавляем исключения пререндеринга SSR и сбоев сети
+            }
+            finally
+            {
+                isLoaded = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+
+        // Вычищаем сессию полностью из браузера
+        await Js.InvokeVoidAsync("localStorage.removeItem", "token");
+        await Js.InvokeVoidAsync("sessionStorage.removeItem", "token");
+        
+        // Перенаправляем на главную с полной перезагрузкой
+        Nav.NavigateTo("/", true);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

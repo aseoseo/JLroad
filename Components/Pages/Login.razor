@@ -1,0 +1,112 @@
+@page "/auth/login"
+@using JIroad.Api
+@using System.Net.Http.Json
+@inject NavigationManager Nav
+@inject IJSRuntime Js
+
+<PageTitle>Вход | JIroad</PageTitle>
+
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: system-ui, sans-serif; padding: 1.5rem;">
+    <div style="background: #ffffff; padding: 2.5rem; border-radius: 20px; border: 1px solid #e2e8f0; width: 100%; max-width: 440px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="margin: 0; font-size: 1.8rem; color: #0f172a; font-weight: 800;">Вход в JIroad</h1>
+            <p style="margin: 0.4rem 0 0 0; color: #64748b; font-size: 0.9rem;">С возвращением!<br/>Авторизуйтесь в рабочее пространство</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="padding: 0.75rem 1rem; background: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 500;">
+                ❌ Неверный Email или пароль.
+            </div>
+        }
+
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <div style="margin-bottom: 1.25rem;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Email адрес</label>
+                <input type="email" @bind="loginModel.Email" required style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" placeholder="name@example.com" />
+            </div>
+
+            <div style="margin-bottom: 1.75rem;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Пароль</label>
+                <input type="password" @bind="loginModel.Password" required style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" placeholder="••••••••" />
+            </div>
+
+            <button type="submit" class="text-white" style="width: 100%; background: #2563eb; font-weight: 600; padding: 0.75rem; border-radius: 10px; border: none; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.15);" disabled="@isSubmitting">
+                @(isSubmitting ? "Проверка..." : "Войти в систему")
+            </button>
+        </EditForm>
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #64748b;">
+            Новый пользователь? <a href="/auth/register" style="color: #2563eb; font-weight: 600; text-decoration: none;">Создать аккаунт</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginFormModel loginModel = new();
+    private string errorMessage = "";
+    private bool isSubmitting = false;
+
+    private async Task HandleLogin()
+    {
+        isSubmitting = true;
+        errorMessage = "";
+        try
+        {
+            // ИСПРАВЛЕНО: Умное переключение BaseAddress, если код выполняется внутри Docker-контейнера
+            string baseAddress = Nav.BaseUri;
+            if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+            {
+                baseAddress = "http://127.0.0.1:8080/";
+            }
+
+            using var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+            var response = await http.PostAsJsonAsync("/api/auth/login", loginModel);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var authData = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+                if (authData != null)
+                {
+                    await Js.InvokeVoidAsync("jiroad.saveToken", authData.Token);
+                    
+                    if (authData.Role == "Mentor")
+                    {
+                        Nav.NavigateTo("/mentor/dashboard");
+                    }
+                    else
+                    {
+                        Nav.NavigateTo("/dashboard");
+                    }
+                }
+            }
+            else
+            {
+                errorMessage = "Unauthorized";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class LoginFormModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    public class AuthResponseDto
+    {
+        public string Token { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string? MentorCode { get; set; }
+    }
+}

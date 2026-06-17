@@ -1,0 +1,591 @@
+@page "/help"
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Интерактивная справка | JIroad</PageTitle>
+
+<div class="container-fluid mt-3 mb-5 px-4" style="max-width: 1440px; font-family: system-ui, -apple-system, sans-serif;">
+    
+    <!-- ВЕРХНИЙ ИНФОРМАЦИОННЫЙ БАННЕР -->
+    <div class="card shadow-sm border-0 p-4 mb-4 rounded-3 text-white" style="background: linear-gradient(135deg, #1e3a8a, #2563eb);">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h1 class="fw-bold mb-1 text-white" style="font-size: 1.85rem;">
+                    <span class="bi bi-journal-bookmark-fill me-2"></span> База знаний и руководство пользователя JIroad
+                </h1>
+                <p class="mb-0 opacity-90 fs-5">Исчерпывающий интерактивный гид по всем кнопкам, меню, возможностям и сценариям работы.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-light text-primary fw-bold shadow-sm" @onclick="@ExpandAll">
+                    <span class="bi bi-plus-square-fill me-1"></span> Развернуть всё
+                </button>
+                <button class="btn btn-outline-light fw-bold" @onclick="@CollapseAll">
+                    <span class="bi bi-dash-square-fill me-1"></span> Свернуть всё
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ДВУХКОЛОННЫЙ МАКЕТ СПРАВКИ -->
+    <div class="row">
+        
+        <!-- ЛЕВОЕ ИЕРАРХИЧЕСКОЕ МЕНЮ (НАВИГАЦИЯ С АВТОРАСКРЫТИЕМ) -->
+        <div class="col-xl-3 col-lg-4 mb-4">
+            <div class="card shadow-sm border-1 sticky-top" style="top: 15px; max-height: 85vh; overflow-y: auto; border-radius: 12px; border-color: #e2e8f0;">
+                <div class="card-header bg-dark text-white fw-bold py-3">
+                    <span class="bi bi-list-nested text-warning me-2"></span> Содержание руководства
+                </div>
+                <div class="list-group list-group-flush small">
+                    
+                    <button type="button" @onclick="@(() => ScrollToSection(10, "user-scenario"))" class="list-group-item list-group-item-action py-3 text-start fw-bold text-dark style-scenario-btn" style="background-color: #fef08a;">
+                        <span class="bi bi-bezier text-danger me-2"></span> Сценарий: От старта до 100%
+                    </button>
+                    
+                    <button type="button" @onclick="@(() => ScrollToSection(0, "user-intro"))" class="list-group-item list-group-item-action py-2.5 text-start fw-bold text-primary border-bottom">
+                        <span class="bi bi-compass-fill me-2"></span> Как устроена система?
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">1. Доступ и Профиль</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(1, "user-auth"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-lock-fill text-success me-2"></span> Вход и Регистрация
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(1, "user-profile"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-person-badge-fill text-success me-2"></span> Личный кабинет
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">2. Панель управления</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(2, "user-dash-metrics"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-bar-chart-fill text-primary me-2"></span> Индикаторы и Статистика
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(2, "user-dash-actions"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-collection-play-fill text-primary me-2"></span> Список ваших карт
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">3. Графический холст (Canvas)</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(3, "user-canvas-tools"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-bezier2 text-warning me-2"></span> Боковые инструменты холста
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(3, "user-canvas-top"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-layout-sidebar-inset text-warning me-2"></span> Верхняя панель действий
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(3, "user-canvas-nodes"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-node-plus text-warning me-2"></span> Управление узлами и связями
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">4. Свойства и Материалы</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(4, "user-props-form"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-sliders text-info me-2"></span> Параметры выбранной темы
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(4, "user-props-materials"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-journal-text text-info me-2"></span> Лекции, Ссылки и Чек-листы
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">5. Генерация через ИИ</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(5, "user-ai-fields"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-robot text-purple me-2"></span> Автогенератор Gemini
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">6. Контроль знаний (Тесты)</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(6, "user-tests-manage"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-patch-question text-danger me-2"></span> Создание вопросов
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(6, "user-tests-run"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-check-all text-danger me-2"></span> Сдача теста студентом
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">7. Команда и Экспорт данных</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(7, "user-collab-sync"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-people-fill text-secondary me-2"></span> Совместный режим онлайн
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(7, "user-export-modal"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-download text-secondary me-2"></span> Настройки окна экспорта
+                    </button>
+                    
+                    <div class="fw-bold px-3 py-2 bg-light border-bottom text-uppercase text-muted" style="font-size: 10px; letter-spacing: 0.05em;">8. Сообщество и Спецроли</div>
+                    <button type="button" @onclick="@(() => ScrollToSection(8, "user-library"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-globe2 text-dark me-2"></span> Библиотека шаблонов
+                    </button>
+                    <button type="button" @onclick="@(() => ScrollToSection(9, "user-roles"))" class="list-group-item list-group-item-action ps-4 py-2 text-start">
+                        <span class="bi bi-mortarboard-fill text-dark me-2"></span> Инструменты Ментора и Админа
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ЧАСТЬ: ДЕТАЛИЗИРОВАННОЕ ОПИСАНИЕ И СЦЕНАРИЙ -->
+        <div class="col-xl-9 col-lg-8">
+            
+            <!-- ВВОДНЫЙ РАЗДЕЛ -->
+            <div id="user-intro" class="p-4 rounded-3 border mb-4 shadow-sm" style="background-color: #f8fafc; border-color: #e2e8f0;">
+                <h4 class="fw-bold text-dark mb-2"><span class="bi bi-info-circle-fill text-primary me-2"></span> 0. Принцип работы интерфейса</h4>
+                <p class="mb-0 text-secondary leading-relaxed">
+                    Данный справочник разработан для быстрого изучения всех элементов управления программы. Каждое поле, кнопка и флажок описаны с позиции того, что вы видите на экране и к какому результату приводит клик мыши.
+                </p>
+            </div>
+
+            <!-- ИЕРАРХИЧЕСКИЙ АККОРДЕОН -->
+            <div class="accordion shadow-sm" id="userManualAccordion">
+                
+                <!-- РАЗДЕЛ 10: СКВОЗНОЙ ПОШАГОВЫЙ СЦЕНАРИЙ (ВЫНЕСЕН НАВЕРХ ДЛЯ УДОБСТВА) -->
+                <div class="accordion-item mb-3 border rounded-3 border-warning" id="user-scenario">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-gradient fs-5" style="background-color: #fef08a;" type="button" @onclick="@(() => ToggleSection(10))">
+                            <span class="bi bi-bezier text-danger me-2"></span> 🚀 Сквозной сценарий: Идеальный пошаговый процесс работы
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(10) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            <p class="lead text-dark">Пройдите эти 7 шагов, чтобы полностью освоить работу с дорожными картами в системе:</p>
+                            
+                            <div class="row g-4 mt-2">
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border-start border-4 border-success bg-light shadow-sm">
+                                        <h5><span class="badge bg-success me-2">Шаг 1</span> Создание фундамента (Авторизация и вход)</h5>
+                                        <p class="small text-secondary mb-0">Зарегистрируйте аккаунт. Если вы учитесь с преподавателем, выберите роль <strong>Студент</strong> и введите код, который он вам выдал, чтобы ваши аккаунты связались.</p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border-start border-4 border-primary bg-light shadow-sm">
+                                        <h5><span class="badge bg-primary me-2">Шаг 2</span> Инициализация новой карты</h5>
+                                        <p class="small text-secondary mb-0">Находясь на Главной панели, нажмите кнопку <strong>«Создать Roadmap»</strong> или перейдите в <strong>«ИИ-Генератор»</strong>. Задайте параметры, выберите уровень сложности и нажмите фиксацию — перед вами откроется пустой или автоматически сгенерированный ИИ холст.</p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border-start border-4 border-warning bg-light shadow-sm">
+                                        <h5><span class="badge bg-warning text-dark me-2">Шаг 3</span> Моделирование структуры на холсте</h5>
+                                        <p class="small text-secondary mb-0">Используя левую боковую панель инструментов, нажмите на значок <strong>＋</strong>, чтобы добавить новые темы-узлы. Переключитесь на инструмент <strong>«Прицел»</strong>, расставьте темы в удобном порядке, зажимая их левой кнопкой мыши. Соедините их стрелочками, протягивая линии от коннекторов, чтобы задать порядок изучения блоков. Не забудьте нажать зелёную кнопку <strong>«Сохранить карту»</strong> внизу.</p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border-start border-4 border-info bg-light shadow-sm">
+                                        <h5><span class="badge bg-info text-dark me-2">Шаг 4</span> Наполнение тем знаниями</h5>
+                                        <p class="small text-secondary mb-0">Кликните по любому узлу, чтобы справа открылась его карточка параметров. Напишите конспект лекции в центральное текстовое поле, прикрепите полезные внешние ссылки кнопкой <strong>«Добавить внешнюю ссылку»</strong> и создайте список практических шагов через кнопку <strong>«Добавить пункт чек-листа»</strong>.</p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border-start border-4 border-danger bg-light shadow-sm">
+                                        <h5><span class="badge bg-danger me-2">Шаг 5</span> Интеграция системы контроля</h5>
+                                        <p class="small text-secondary mb-0">Нажмите верхнюю кнопку <strong>«Тесты карты»</strong>. Создайте проверочный тест, добавьте вопросы, варианты ответов и обязательно отметьте круглыми флажками (Radio) правильные варианты ответов, чтобы система могла проверять знания студента.</p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border-start border-4 border-secondary bg-light shadow-sm">
+                                        <h5><span class="badge bg-secondary me-2">Шаг 6</span> Прохождение и обучение</h5>
+                                        <p class="small text-secondary mb-0">Перейдите на холст в режим обучения. Кликайте по открытым узлам, изучайте теорию, переходите по ссылкам и отмечайте выполненные шаги в чек-листах. Запускайте тесты кнопкой <strong>«Начать тестирование»</strong> и успешно сдавайте их, чтобы разблокировать доступ к следующим сложным темам графа.</p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border-start border-4 border-dark bg-light shadow-sm">
+                                        <h5><span class="badge bg-dark me-2">Шаг 7</span> Аналитика и публикация</h5>
+                                        <p class="small text-secondary mb-0">Следите за заполнением шкал прогресса на Главной панели. Нажмите кнопку <strong>«Аналитика»</strong>, чтобы увидеть детальные отчеты успеваемости. Если ваша карта получилась отличной — нажмите <strong>«Опубликовать в общие шаблоны»</strong>, чтобы поделиться ею со всем сообществом платформы.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 1: АВТОРИЗАЦИЯ И ПРОФИЛЬ -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-auth">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(1))">
+                            <span class="bi bi-shield-lock-fill text-primary me-2"></span> 1. Раздел: Регистрация, вход в систему и личный аккаунт
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(1) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            
+                            <h5><span class="bi bi-door-open-fill text-success me-2"></span> Форма входа в приложение (Login.razor)</h5>
+                            <p class="text-muted">Используется для получения доступа к вашим личным дорожным картам.</p>
+                            <ul>
+                                <li class="mb-2"><strong>Поле «Электронная почта (Email)»:</strong> Текстовая строка для ввода вашего адреса. Система проверяет наличие знака собачки (<code>@@</code>). Если адрес указан некорректно, вход заблокируется.</li>
+                                <li class="mb-2"><strong>Поле «Пароль»:</strong> Секретное текстовое поле. Вводимые знаки скрываются точками. Для безопасности ваш пароль должен быть длиннее 6 символов.</li>
+                                <li class="mb-2"><strong>Кнопка «Войти» <span class="badge bg-primary"><span class="bi bi-box-arrow-in-right"></span></span>:</strong> Считывает введённые данные, проверяет их правильность и перенаправляет вас на вашу личную рабочую зону.</li>
+                            </ul>
+
+                            <h5 class="mt-4"><span class="bi bi-person-plus-fill text-success me-2"></span> Форма создания нового аккаунта (Register.razor)</h5>
+                            <p class="text-muted">Предназначена для новых пользователей.</p>
+                            <ul>
+                                <li class="mb-2"><strong>Поле «Имя пользователя»:</strong> Ваш уникальный никнейм в системе, по которому вас смогут находить наставники и друзья.</li>
+                                <li class="mb-2"><strong>Поле «Подтверждение пароля»:</strong> Защитное поле. Сюда нужно ввести пароль ещё раз. Если символы не совпадут с первым полем, приложение выдаст предупреждение.</li>
+                                <li class="mb-2"><strong>Кнопка «Зарегистрироваться» <span class="badge bg-success">✓</span>:</strong> Создаёт ваш чистый профиль в системе и сразу выполняет автоматический вход.</li>
+                            </ul>
+
+                            <h5 class="mt-4" id="user-profile"><span class="bi bi-person-circle text-success me-2"></span> Личный кабинет (Profile.razor) и выход</h5>
+                            <ul>
+                                <li class="mb-2"><strong>Визуальный круглый значок «U» в верхнем углу меню:</strong> Индикатор вашей активности. Если он светится синим цветом, значит, вы успешно авторизованы. При наведении мыши всплывает подсказка «Профиль активен».</li>
+                                <li class="mb-2"><strong>Поле ввода «Квалификация / Специализация»:</strong> Текстовая строка на странице профиля. Вы можете написать туда свою текущую учебную роль (например: *«Студент-программист»*). Кнопка <strong>«Обновить данные»</strong> сохраняет этот текст.</li>
+                                <li class="mb-2"><strong>Кнопка «Выход» <span class="text-danger fw-bold"><span class="bi bi-box-arrow-right"></span></span> внизу меню:</strong> Мгновенно завершает вашу текущую сессию, полностью очищает память браузера от ваших данных авторизации и переводит сайт в режим гостя.</li>
+                            </ul>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 2: ДАШБОРД -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-dash-metrics">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(2))">
+                            <span class="bi bi-grid-fill text-primary me-2"></span> 2. Раздел: Рабочая зона «Мои Roadmap» (Dashboard.razor)
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(2) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            
+                            <h5><span class="bi bi-speedometer2 text-primary me-2"></span> Общие индикаторы прогресса (Блоки метрик)</h5>
+                            <p class="text-muted">Верхняя панель наглядно демонстрирует вашу общую успеваемость по всем предметам:</p>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded bg-light">
+                                        <div class="small text-muted fw-bold">📋 ВСЕГО КАРТ</div>
+                                        <div class="fs-4 fw-bold">Отображает общее количество дорожных карт в вашем кабинете.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded bg-light" style="border-left: 4px solid #22c55e !important;">
+                                        <div class="small text-success fw-bold">🏆 ОСВОЕНО (100%)</div>
+                                        <div class="fs-4 fw-bold">Количество карт, в которых вы закрыли абсолютно все этапы.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded bg-light" style="border-left: 4px solid #3b82f6 !important;">
+                                        <div class="small text-primary fw-bold">⏳ В ПРОЦЕССЕ</div>
+                                        <div class="fs-4 fw-bold">Карты, которые вы сейчас активно изучаете и выполняете задачи.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded bg-light" style="border-left: 4px solid #6366f1 !important;">
+                                        <div class="small text-purple fw-bold">📈 СРЕДНИЙ ПРОГРЕСС</div>
+                                        <div class="fs-4 fw-bold">Общий средний процент выполнения по всем вашим трекам вместе взятым.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 id="user-dash-actions"><span class="bi bi-collection-play-fill text-primary me-2"></span> Управление списком дорожных карт</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Элемент / Кнопка в интерфейсе</th>
+                                            <th>Что происходит на экране при нажатии пользователя?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><button class="btn btn-sm text-white bg-primary fw-bold">+ Создать Roadmap</button></td>
+                                            <td>Открывает форму создания новой пустой карты (<code>RoadmapCreate.razor</code>). Там вы вводите название, описание и выбираете сложность.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-light border fw-bold">🤖 ИИ-Генератор</button></td>
+                                            <td>Перенаправляет вас на экран интеллектуального помощника для мгновенного автоматического проектирования графа обучения.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Клик по плитке дорожной карты</strong></td>
+                                            <td>Приложение считывает выбор и мгновенно переносит вас на интерактивный графический холст выбранного предмета.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-outline-danger py-0 px-1">🗑 (Иконка ведра на плитке)</button></td>
+                                            <td>Вызывает системное всплывающее окно с вопросом: *«Вы уверены, что хотите полностью удалить дорожную карту?»*. Если нажать «Да» — карта полностью исчезает из списка.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Шкала (Progress Bar) внутри плитки</strong></td>
+                                            <td>Визуальная линия. Если ваш прогресс 0%, она серая; в процессе — синяя; при достижении 100% она становится ярко-зелёной.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Нижняя подпись «🧩 Этапов обучения: Х»</strong></td>
+                                            <td>Информационный счетчик. Показывает, сколько всего графических блоков-тем создано внутри этой карты.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 3: КОНСТРУКТОР CANVAS -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-canvas-tools">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(3))">
+                            <span class="bi bi-bezier2 text-primary me-2"></span> 3. Раздел: Бесконечный Графический Холст (Canvas.razor)
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(3) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            
+                            <h5><span class="bi bi-layout-sidebar-fill text-warning me-2"></span> Левая вертикальная панель (Панель инструментов холста)</h5>
+                            <p class="text-muted">Эти кнопки переключают текущий режим взаимодействия вашей мыши с холстом:</p>
+                            <ul>
+                                <li class="mb-2"><strong>Кнопка 🏠 (Домик):</strong> Мгновенно возвращает вас обратно на страницу списка ваших карт (Дашбоард).</li>
+                                <li class="mb-2"><strong>Кнопка ↩ (Стрелка назад):</strong> Отменяет ваше последнее действие на холсте (например, если вы случайно переместили узел или стёрли связь).</li>
+                                <li class="mb-2"><strong>Кнопка ↪ (Стрелка вперед):</strong> Возвращает отменённое действие назад.</li>
+                                <li class="mb-2"><strong>Инструмент ⌖ (Прицел):</strong> Режим выбора и редактирования узлов. В этом режиме клик по узлу открывает его параметры в правой панели.</li>
+                                <li class="mb-2"><strong>Инструмент ✥ (Крестик):</strong> Режим перемещения холста. Позволяет зажать левую кнопку мыши в любом пустом месте и двигать всё бесконечное поле в стороны.</li>
+                                <li class="mb-2"><strong>Инструмент ↝ (Волнистая стрелка):</strong> Режим управления связями. Позволяет связывать темы кликами мыши последовательно.</li>
+                                <li class="mb-2"><strong>Кнопка ＋ (Плюс):</strong> Быстрое создание нового узла. На холсте сразу появляется блок с дефолтным названием.</li>
+                                <li class="mb-2"><strong>Кнопка ⇩ (Стрелка вниз):</strong> Открывает модальное окно экспорта для скачивания карты в файл.</li>
+                            </ul>
+
+                            <h5 class="mt-4" id="user-canvas-top"><span class="bi bi-layout-header text-warning me-2"></span> Верхняя панель управления и действий</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 250px;">Кнопка сверху экрана</th>
+                                            <th>Что происходит при клике на неё?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-outline-info py-0 px-2">📝 Тесты карты</button></td>
+                                            <td>Переносит вас на страницу управления встроенными контрольными тестами этой дорожной карты.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-outline-danger py-0 px-2">🗑 Удалить роадмап</button></td>
+                                            <td>Полностью стирает текущую дорожную карту и выкидывает вас в главное меню.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-outline-success py-0 px-2">📢 Опубликовать в общие шаблоны</button></td>
+                                            <td>Делает вашу карту публичной. На экране появляется поздравление, и карта становится видна всем пользователям в глобальной библиотеке.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-outline-primary py-0 px-2">📊 Аналитика прогресса</button></td>
+                                            <td>Открывает страницу графических отчётов, где показано детальное время прохождения и успеваемость.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-light border py-0 px-2">Автораскладка</button></td>
+                                            <td>**Магическая кнопка:** Автоматически выстраивает все хаотично раскиданные узлы на холсте в красивую, ровную геометрическую сетку по рядам.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-light border py-0 px-2">Сброс вида</button></td>
+                                            <td>Сбрасывает масштаб холста к исходным 100% и центрирует камеру по умолчанию.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><button class="btn btn-sm btn-success py-1 px-3">💾 Сохранить карту (Плавающая кнопка)</button></td>
+                                            <td>Большая кнопка внизу холста. Фиксирует текущие координаты расположения всех блоков. После нажатия текст меняется на *«Сохранение...»*, а затем на *«✓ Успешно сохранено!»*.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h5 class="mt-4" id="user-canvas-nodes"><span class="bi bi-box-seam text-warning me-2"></span> Как взаимодействовать с узлами (блоками тем) на холсте</h5>
+                            <div class="p-3 rounded border mb-2" style="background-color: #fdfaf2; border-color: #f5e6c4;">
+                                <ul>
+                                    <li class="mb-2"><strong>Перетаскивание узла:</strong> Зажмите левую кнопку мыши на блоке темы и потяните в любую сторону — блок послушно поедет за вашим курсором по холсту.</li>
+                                    <li class="mb-2"><strong>Клик по блоку:</strong> Выделяет тему синей рамкой и открывает её содержимое. Внутри блока отображается персональная мини-шкала прогресса (зелёная, если тема закрыта).</li>
+                                    <li class="mb-2"><strong>Вытягивание стрелочки (Связи):</strong> На каждом узле есть маленький значок **「＋」** на краю. Зажмите мышку прямо на этом плюсике и ведите линию к соседнему блоку. На холсте появится пунктирная нить. Как только вы отпустите мышь над целевым блоком — между ними появится постоянная стрелка направления обучения.</li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 4: СВОЙСТВА И МАТЕРИАЛЫ -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-props-form">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(4))">
+                            <span class="bi bi-sliders text-primary me-2"></span> 4. Раздел: Наполнение тем учебными материалами (Правая панель)
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(4) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            
+                            <h5><span class="bi bi-pencil-square text-info me-2"></span> Форма редактирования параметров темы</h5>
+                            <p class="text-muted">Когда узел выбран, в правой панели можно настраивать его карточку:</p>
+                            <ul>
+                                <li class="mb-2"><strong>Поле «Название узла»:</strong> Текстовая строка. Текст, который вы сюда впишете, мгновенно отобразится в заголовке блока на графическом поле холста.</li>
+                                <li class="mb-2"><strong>Поле «Описание»:</strong> Краткая текстовая аннотация, подсказывающая, чему посвящен данный этап.</li>
+                                <li class="mb-2"><strong>Выпадающий список «Тип элемента»:</strong> Позволяет выбрать логическую роль блока из вариантов: *Тема, Навык, Проект, Тест, Контрольная точка*.</li>
+                                <li class="mb-2"><strong>Выпадающий список «Сложность»:</strong> Выбор уровня погружения (*Beginner, Intermediate, Advanced*).</li>
+                                <li class="mb-2"><strong>Выпадающий список «Статус»:</strong> Можно принудительно переключать вручную: *Не начато, В процессе, Завершено*.</li>
+                                <li class="mb-2"><strong>Ползунок прогресса (Range Slider):</strong> Интерактивный регулятор от 0% до 100%. Двигая его мышкой, вы изменяете заполненность шкалы этой темы.</li>
+                                <li class="mb-2"><strong>Кнопка «Сохранить изменения» в форме:</strong> Записывает все текстовые корректировки параметров.</li>
+                                <li class="mb-2"><strong>Кнопка «🗑 Удалить узел» (Красная):</strong> Стирает этот блок с холста вместе со всеми стрелочками, которые к нему подходили.</li>
+                            </ul>
+
+                            <h5 class="mt-4" id="user-props-materials"><span class="bi bi-journal-text text-info me-2"></span> Секция привязки лекций, ссылок и подзадач (NodeDetails.razor)</h5>
+                            <p class="text-muted">Позволяет превратить блок в полноценный учебник:</p>
+                            <div class="p-3 bg-light rounded border">
+                                <h6><strong>Доступные кнопки управления контентом:</strong></h6>
+                                <ol class="small mb-0">
+                                    <li class="mb-2"><strong>Поле «Текст лекции» (Большая область ввода):</strong> Сюда вы вводите情 полноценный конспект теории, инструкции и примеры кода. Студент сможет читать этот текст при клике.</li>
+                                    <li class="mb-2"><strong>Кнопка «Добавить внешнюю ссылку»:</strong> Создаёт новую строчку с полями для ввода названия ссылки и самого веб-адреса (URL). Сюда прикрепляют полезные видео с YouTube или статьи.</li>
+                                    <li class="mb-2"><strong>Кнопка «Добавить пункт чек-листа»:</strong> Добавляет строку с текстовым описанием и интерактивным квадратиком-галочкой (Checkbox). Студент, проходя карту, должен будет кликать по этим галочкам, подтверждая выполнение шагов.</li>
+                                    <li class="mb-2"><strong>Кнопка «Сохранить материалы»:</strong> Сохраняет весь контент внутри темы для всех учащихся.</li>
+                                </ol>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 5: ИИ ГЕНЕРАТОР -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-ai-fields">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(5))">
+                            <span class="bi bi-robot text-primary me-2"></span> 5. Раздел: Интеллектуальный ИИ-Генератор траекторий (AiGenerator.razor)
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(5) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            <p class="text-muted">Этот экран позволяет не рисовать карту вручную, а поручить это искусственному интеллекту.</p>
+                            
+                            <h6><strong>Поля формы и параметры генерации:</strong></h6>
+                            <ul>
+                                <li class="mb-2"><strong>Поле «Какую технологию или профессию хотите освоить?»:</strong> Главная текстовая строка. Сюда нужно написать вашу цель понятным языком. Например: *«Иизчить язык C# и создание сайтов на ASP.NET Core до уровня стажёра»*.</li>
+                                <li class="mb-2"><strong>Поле «Сколько времени вы готовы выделить (Таймлайн)»:</strong> Текстовое поле. Указывает ИИ интенсивность программы. Например: *«3 месяца, по 10 часов в неделю»*.</li>
+                                <li class="mb-2"><strong>Выпадающий список «Текущий уровень»:</strong> Позволяет указать ИИ вашу базу данных знаний на старте. Варианты: *Новичок (Beginner), Средний (Intermediate), Продвинутый (Advanced)*.</li>
+                                <li class="mb-2"><strong>Поле «Общая категория»:</strong> Текстовая строка для группировки (например: *«Программирование»*, *«Дизайн»*, *«Маркетинг»*).</li>
+                                <li class="mb-2"><strong>Большая кнопка «🚀 Сгенерировать и открыть карту»:</strong>
+                                    <p class="small text-muted mt-1 mb-0">При нажатии форма блокируется. Кнопка меняет текст на *«🧠 ИИ строит граф связей... Подождите»* и запускает крутящуюся анимацию. Нейросеть сама придумывает темы, расставляет связи-стрелочки и наполняет чек-листы. Как только процесс завершится, сайт **автоматически откроет готовый холст** с вашей новой сгенерированной картой обучения!</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 6: ТЕСТЫ -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-tests-manage">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(6))">
+                            <span class="bi bi-patch-question-fill text-primary me-2"></span> 6. Раздел: Система контрольных тестов (RoadmapTests.razor)
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(6) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            
+                            <h5><span class="bi bi-pencil-fill text-danger me-2"></span> Интерфейс создания тестов (Режим Создателя / Преподавателя)</h5>
+                            <p class="text-muted">Позволяет привязать к узлу проверочный тест для контроля усвоения знаний.</p>
+                            <ul>
+                                <li class="mb-2"><strong>Кнопка «Добавить вопрос в тест»:</strong> Создает на экране пустой блок для нового тестового вопроса. В текстовое поле вводится сам вопрос.</li>
+                                <li class="mb-2"><strong>Кнопка «Добавить вариант ответа»:</strong> Разворачивает поля для ввода вариантов выбора (можно добавить несколько вариантов).</li>
+                                <li class="mb-2"><strong>Круглый переключатель (Radio Button) рядом с ответом:</strong> Важнейший элемент управления. Создатель карты обязан кликнуть мышкой на этот кружок напротив правильного ответа. Приложение запомнит этот выбор как эталон.</li>
+                            </ul>
+
+                            <h5 class="mt-4" id="user-tests-run"><span class="bi bi-play-circle-fill text-danger me-2"></span> Интерфейс тестирования (Режим Студента)</h5>
+                            <p class="text-muted">Доступен учащемуся, проходящему карту:</p>
+                            <ul>
+                                <li class="mb-2"><strong>Кнопка «Запустить тестирование» <span class="badge bg-success"><span class="bi bi-play-fill"></span></span>:</strong> Скрывает лекционные материалы, обнуляет прошлые попытки и выводит на экран первый вопрос с вариантами ответов.</li>
+                                <li class="mb-2"><strong>Интерактивный выбор ответов:</strong> Студент отмечает кружками те варианты, которые считает верными.</li>
+                                <li class="mb-2"><strong>Кнопка «Проверить результаты»:</strong> Завершает тест. Система сверяет ответы с эталоном и мгновенно выводит на экран окно с результатом (например: *«Тест пройден успешно: 90% правильных ответов!»*). Если тест сдан — открывается доступ к следующим закрытым стрелочками темам на холсте.</li>
+                            </ul>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 7: СИНХРОНИЗАЦИЯ И ЭКСПОРТ -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-collab-sync">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(7))">
+                            <span class="bi bi-lightning-charge-fill text-primary me-2"></span> 7. Раздел: Командная мультиплеерная работа и выгрузка данных
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(7) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            
+                            <h5><span class="bi bi-people-fill text-secondary me-2"></span> Совместное редактирование в реальном времени</h5>
+                            <ul>
+                                <li class="mb-2"><strong>Зелёный индикатор сети на холсте:</strong> Показывает, что вы подключены к живой комнате совместной работы. Если ваш друг или коллега зайдёт на эту же карту и начнёт двигать графические блоки мышкой, вы **увидите их перемещение на своём экране вживую в реальном времени** без перезагрузки страницы!</li>
+                                <li class="mb-2"><strong>Кнопка «Сгенерировать инвайт-ссылку»:</strong> Расположена на холсте. Выдаёт секретный код-приглашение в буфер обмена. Вы можете отправить его другу, чтобы он стал соавтором вашей карты.</li>
+                            </ul>
+
+                            <h5 class="mt-4" id="user-export-modal"><span class="bi bi-download text-secondary me-2"></span> Модальное окно экспорта дорожной карты</h5>
+                            <p class="text-muted">Открывается при нажатии кнопки ⇩ на левой панели. Позволяет выгрузить ваши труды:</p>
+                            <ul>
+                                <li class="mb-2"><strong>Выпадающий список «Формат экспорта данных»:</strong> Выбор расширения итогового файла: *JSON файл (.json)* (для переноса в другие программы), *Простой текст (.txt)* (для удобного чтения), *Markdown документ (.md)* (с красивой разметкой заголовков для отчётов).</li>
+                                <li class="mb-2"><strong>Выпадающий список «Что именно выгрузить»:</strong> Варианты: *Всю карту целиком* (структура, описание, связи), *Только этапы* (названия и прогресс), *Только связи* между этапами.</li>
+                                <li class="mb-2"><strong>Выпадающий список «Куда экспортировать данные»:</strong> Можно выбрать *Скачать готовым файлом в браузер* (файл сразу улетит в загрузки вашего компьютера) или *Скопировать текст в буфер обмена* (чтобы просто вставить его в Word или блокнот через Ctrl+V).</li>
+                                <li class="mb-2"><strong>Кнопка «Подтвердить экспорт»:</strong> Запускает процесс формирования. По окончании внутри окна загорается зелёное уведомление: *«🚀 Файл успешно сгенерирован и скачан!»* или *«📋 Данные скопированы в буфер обмена!»*.</li>
+                            </ul>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- РАЗДЕЛ 8: БИБЛИОТЕКА И РОЛИ -->
+                <div class="accordion-item mb-3 border rounded-3" id="user-library">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-light fs-5" type="button" @onclick="@(() => ToggleSection(8))">
+                            <span class="bi bi-globe2 text-primary me-2"></span> 8. Раздел: Сообщество, публичная библиотека и роли пользователей
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse @(activeSections.Contains(8) ? "show" : "")">
+                        <div class="accordion-body bg-white border-top">
+                            
+                            <h5><span class="bi bi-journal-bookmark-fill text-dark me-2"></span> Публичная библиотека шаблонов (Library.razor)</h5>
+                            <p class="text-muted">Экран, где собраны лучшие учебные программы от пользователей сообщества.</p>
+                            <ul>
+                                <li class="mb-2"><strong>Поисковая строка библиотеки:</strong> Строка ввода вверху страницы. Вы можете ввести любое слово (например, *«Базы данных»* или *«C#»*), и список карточек мгновенно отфильтрует подходящие шаблоны.</li>
+                                <li class="mb-2"><strong>Кнопка «Режим предпросмотра»:</strong> Открывает чужую карту в режиме «Только чтение». Вы можете рассмотреть структуру тем, почитать конспекты, но не можете двигать чужие узлы.</li>
+                                <li class="mb-2"><strong>Кнопка «Скопировать шаблон себе»:</strong> Важнейшая функция. Клонирует всю структуру чужой публичной карты и создаёт её полную независимую копию на вашем личном Дашборде. Теперь вы можете проходить её и менять как угодно.</li>
+                            </ul>
+
+                            <h5 class="mt-4" id="user-roles"><span class="bi bi-mortarboard-fill text-dark me-2"></span> Панель Наставника (MentorDashboard.razor) и Модерация</h5>
+                            <p class="text-muted">Специальные экраны, доступные пользователям со специфическими правами в системе.</p>
+                            <ul>
+                                <li class="mb-2"><strong>Интерфейс Наставника (Ментора):</strong> Открывает доступ к списку прикреплённых за вами студентов. Кнопка <strong>«Посмотреть успеваемость»</strong> выводит на экран детальный лог прохождения карт студентом. Кнопка <strong>«Оставить рецензию»</strong> открывает поле ввода для отправки замечаний или подсказок к конкретной теме ученика.</li>
+                                <li class="mb-2"><strong>Интерфейс Администратора (Служебная панель Admin.razor):</strong> Содержит таблицу всех пользователей системы с выпадающими списками ролей, позволяя переключать права аккаунтов. Также содержит кнопку <strong>«Изъять карту»</strong>, которая позволяет мгновенно убрать из общего доступа библиотеки любой некорректный или пустой шаблон.</li>
+                            </ul>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- Конец аккордеона -->
+
+        </div>
+    </div>
+</div>
+
+@code {
+    // Набор идентификаторов открытых по умолчанию секций аккордеона
+    private HashSet<int> activeSections = new HashSet<int> { 1, 2, 3, 10 };
+
+    // Метод для плавного скролла и автоматического раскрытия нужной вкладки
+    private async Task ScrollToSection(int sectionId, string elementId)
+    {
+        // Если передан ID секции аккордеона (>0), принудительно раскрываем её
+        if (sectionId > 0)
+        {
+            activeSections.Add(sectionId);
+            StateHasChanged();
+        }
+
+        // Кратковременная задержка, чтобы Blazor успел обновить HTML-структуру развёрнутого элемента
+        await Task.Delay(100);
+
+        try
+        {
+            // Вызываем стандартный JavaScript-скрипт для плавной прокрутки страницы к выбранному ID
+            await Js.InvokeVoidAsync("eval", $"document.getElementById('{elementId}').scrollIntoView({{ behavior: 'smooth', block: 'start' }})");
+        }
+        catch 
+        {
+            // Защита от падения на этапе серверного пререндеринга
+        }
+    }
+
+    private void ToggleSection(int sectionId)
+    {
+        if (activeSections.Contains(sectionId))
+        {
+            activeSections.Remove(sectionId);
+        }
+        else
+        {
+            activeSections.Add(sectionId);
+        }
+    }
+
+    private void ExpandAll()
+    {
+        for (int i = 1; i <= 10; i++) activeSections.Add(i);
+    }
+
+    private void CollapseAll()
+    {
+        activeSections.Clear();
+    }
+}

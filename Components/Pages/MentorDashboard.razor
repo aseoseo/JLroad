@@ -1,0 +1,723 @@
+@page "/mentor/dashboard"
+@layout WorkspaceLayout
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using JIroad.Api
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Панель Преподавателя | JIroad</PageTitle>
+
+<div style="padding: 2rem; max-width: 1400px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
+    
+    <header style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div>
+            <h1 style="margin: 0; color: #0f172a; font-size: 1.8rem; font-weight: 700;">👨‍🏫 Панель Мониторинга и Групп</h1>
+            <p style="margin: 0.35rem 0 0 0; color: #64748b; font-size: 0.95rem;">Управляйте группами, создавайте общие курсы и отслеживайте выполнение персональных заданий.</p>
+        </div>
+        
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn" style="background: #fdf2f8; color: #9d174d; border: 1px solid #fce7f3; font-weight: 600; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; font-size: 0.9rem;" @onclick='() => Nav.NavigateTo("/help")'>
+                📖 База знаний (Справка)
+            </button>
+
+            <div style="display: flex; gap: 0.5rem; background: #f8fafc; padding: 0.5rem; border-radius: 12px; border: 1px solid #cbd5e1; width: 320px;">
+                <input type="email" @bind="studentEmailInput" placeholder="Email ученика для привязки..." style="padding: 0.5rem; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1; font-size: 0.9rem;" />
+                <button type="button" class="btn text-white" style="background: #2563eb; border: none; font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;" @onclick="AddStudent">
+                    Привязать
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <button type="button" style="padding: 0.5rem 1.5rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: @(activeTab == "students" ? "#2563eb" : "#f1f5f9"); color: @(activeTab == "students" ? "#ffffff" : "#475569");" @onclick='() => activeTab = "students"'>
+            👥 По ученикам (Индивидуально)
+        </button>
+        <button type="button" style="padding: 0.5rem 1.5rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: @(activeTab == "groups" ? "#2563eb" : "#f1f5f9"); color: @(activeTab == "groups" ? "#ffffff" : "#475569");" @onclick='async () => { activeTab = "groups"; await LoadMentorMasterRoadmaps(); }'>
+            📊 Групповой трекинг (По картам)
+        </button>
+    </div>
+
+    @if (activeTab == "students")
+    {
+        <div style="grid-template-columns: 350px 1fr; gap: 2rem; display: grid;">
+            <aside style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; height: fit-content;">
+                <h3 style="margin-top: 0; margin-bottom: 1rem; color: #0f172a; font-size: 1.1rem;">👥 Ваши учащиеся (@students.Count)</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    @foreach (var s in students)
+                    {
+                        <div style="padding: 0.75rem; border: 1px solid @(selectedStudentId == s.Id ? "#2563eb" : "#e2e8f0"); background: @(selectedStudentId == s.Id ? "#eff6ff" : "#ffffff"); border-radius: 10px; cursor: pointer;" @onclick="() => SelectStudent(s.Id, s.UserName)">
+                            <div style="font-weight: 600; color: #0f172a;">@s.UserName</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">@s.Email</div>
+                        </div>
+                    }
+                </div>
+            </aside>
+
+            <main style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
+                @if (selectedStudentId == 0)
+                {
+                    <p style="color: #94a3b8; text-align: center; padding: 3rem 0;">Выберите учащегося слева для управления его треками.</p>
+                }
+                else
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0;">Учебные планы: @selectedStudentName</h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" class="btn" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px;" @onclick="() => { showManualForm = !showManualForm; showAiForm = false; }">➕ Назначить вручную</button>
+                            <button type="button" class="btn" style="background: #faf5ff; border: 1px solid #e9d5ff; color: #6b21a8; font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px;" @onclick="() => { showAiForm = !showAiForm; showManualForm = false; }">🧠 Через ИИ</button>
+                        </div>
+                    </div>
+
+                    @if (showManualForm)
+                    {
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                            <input type="text" @bind="newTitle" placeholder="Название карты" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;" />
+                            <button type="button" class="btn text-white" style="background: #22c55e; border: none; padding: 0.5rem 1rem; border-radius: 6px;" @onclick="CreateManualRoadmapForStudent">Сохранить</button>
+                        </div>
+                    }
+
+                    @if (showAiForm)
+                    {
+                        <div style="background: #faf5ff; border: 1px solid #f3e8ff; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                            <input type="text" @bind="aiGoal" placeholder="Чему должен обучиться студент?" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;" />
+                            <button type="button" class="btn text-white" style="background: #a855f7; border: none; padding: 0.5rem 1rem; border-radius: 6px;" @onclick="GenerateAiRoadmapForStudent">Сгенерировать</button>
+                        </div>
+                    }
+
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        @foreach (var rm in studentRoadmaps)
+                        {
+                            <div style="padding: 1.25rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 1.15rem; color: #0f172a;">@rm.Title</h4>
+                                        <span style="font-size: 0.85rem; font-weight: bold; color: #2563eb;">Прогресс: @rm.Progress%</span>
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button type="button" class="btn text-white" style="background: #a855f7; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;" @onclick="() => PrepareTaskModalIndividual(selectedStudentId, rm.Id)">➕ Выдать лично</button>
+                                        <button type="button" class="btn text-white" style="background: #2563eb; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;" @onclick='() => Nav.NavigateTo($"/canvas/{rm.Id}")'>Открыть холст</button>
+                                    </div>
+                                </div>
+
+                                <div style="background: #ffffff; border: 1px solid #f3e8ff; border-radius: 8px; padding: 0.75rem; margin-top: 0.75rem;">
+                                    <div style="font-size: 0.8rem; font-weight: bold; color: #6b21a8; margin-bottom: 0.5rem; border-bottom: 1px solid #f3e8ff; padding-bottom: 0.25rem;">
+                                        📌 Задания и решения по данной карте:
+                                    </div>
+                                    @if (studentTasksCache.TryGetValue(rm.Id, out var tasks) && tasks.Any())
+                                    {
+                                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                            @foreach (var t in tasks)
+                                            {
+                                                <div style="font-size: 0.8rem; background: #fef8ff; padding: 0.6rem; border-radius: 6px; border: 1px solid #f3e8ff; display: flex; flex-direction: column; gap: 0.25rem;">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                        <span><b>@t.Title</b> (@(t.TaskType == "Video" ? "🎬 Видео" : t.TaskType == "Link" ? "🔗 Ссылка" : "📝 Текст")) @(t.IsGroupTask ? "👥 [Группа]" : "👤 [Личное]")</span>
+                                                        @if (t.Status == "Assigned") { <span style="color: #6b21a8; font-weight: bold;">[Выдано]</span> }
+                                                        else if (t.Status == "Submitted") { <span style="color: #ea580c; font-weight: bold;">[На проверке ⏳]</span> }
+                                                        else if (t.Status == "Approved") { <span style="color: #16a34a; font-weight: bold;">[Принято ✅]</span> }
+                                                        else if (t.Status == "Rejected") { <span style="color: #dc2626; font-weight: bold;">[На доработке ❌]</span> }
+                                                    </div>
+
+                                                    @if (!string.IsNullOrWhiteSpace(t.Content))
+                                                    {
+                                                        <div style="color: #64748b; font-size: 0.75rem; background: #f8fafc; padding: 0.25rem; border-radius: 4px;">Условие: @t.Content</div>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(t.StudentResponse))
+                                                    {
+                                                        <div style="margin-top: 0.25rem; padding: 0.4rem; background: #fff; border: 1px dashed #cbd5e1; border-radius: 4px; color: #0f172a;">
+                                                            <b>Ответ учащегося:</b> <br/>
+                                                            @if (t.StudentResponse.StartsWith("http")) { <a href="@t.StudentResponse" target="_blank" style="color: #2563eb; text-decoration: underline;">@t.StudentResponse</a> }
+                                                            else { <span>@t.StudentResponse</span> }
+                                                        </div>
+                                                    }
+
+                                                    @if (t.Status == "Submitted")
+                                                    {
+                                                        <div style="margin-top: 0.4rem; display: flex; gap: 0.4rem; background: #fff; padding: 0.4rem; border-radius: 4px;">
+                                                            <input type="text" placeholder="Комментарий / замечание..." @bind="mentorCommentsInput[t.Id]" style="flex: 1; padding: 0.25rem; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px;" />
+                                                            <button type="button" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Rejected", t.IsGroupTask)'>Вернуть</button>
+                                                            <button type="button" style="background: #16a34a; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Approved", t.IsGroupTask)'>Принять</button>
+                                                        </div>
+                                                    }
+                                                    else if (!string.IsNullOrWhiteSpace(t.MentorComment))
+                                                    {
+                                                        <div style="color: #a21caf; font-size: 0.75rem; font-style: italic;">💬 Ваш фидбек: @t.MentorComment</div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="font-size: 0.75rem; color: #a4b3c6; font-style: italic;">Заданий пока нет.</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (showTaskForm)
+                    {
+                        <div style="margin-top: 2rem; padding: 1.5rem; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <h4 style="margin: 0; color: #6b21a8;">🎯 Назначить индивидуальную работу</h4>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Тип контента:</label>
+                                    <select @bind="taskType" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;">
+                                        <option value="Video">🎬 Видео-разбор (Ссылка)</option>
+                                        <option value="Link">🔗 Ссылка на проект (GitHub/Figma)</option>
+                                        <option value="Text">📝 Текстовая задача</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Название задания:</label>
+                                    <input type="text" @bind="taskTitle" placeholder="Например: Лабораторная №1" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Содержимое задания (Текст или URL):</label>
+                                <textarea @bind="taskContent" placeholder="Вставьте ссылку на материал или распишите требования..." style="width:100%; height:70px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;"></textarea>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                                <button type="button" style="padding: 0.4rem 1rem; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;" @onclick="() => showTaskForm = false">Отмена</button>
+                                <button type="button" style="padding: 0.4rem 1.2rem; background: #a855f7; color: white; border: none; font-weight: bold; border-radius: 6px; cursor: pointer;" @onclick="SendPersonalTask">Отправить студенту</button>
+                            </div>
+                        </div>
+                    }
+                }
+            </main>
+        </div>
+    }
+    else if (activeTab == "groups")
+    {
+        <div style="grid-template-columns: 350px 1fr; gap: 2rem; display: grid;">
+            <aside style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; height: fit-content;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                    <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">📋 Общие курсы</h3>
+                    <div style="display: flex; gap: 0.25rem;">
+                        <button type="button" class="btn btn-sm text-white" style="background: #2563eb; border: none; font-weight: bold; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.8rem;" @onclick='() => Nav.NavigateTo($"/canvas/{selectedMasterRoadmapId}")' disabled="@(selectedMasterRoadmapId == 0)">
+                            ✏️ Холст курса
+                        </button>
+                        <button type="button" class="btn btn-sm" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-weight: bold; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.8rem;" @onclick="() => showCreateMasterForm = !showCreateMasterForm">
+                            @(showCreateMasterForm ? "Закрыть" : "＋ Создать")
+                        </button>
+                    </div>
+                </div>
+
+                @if (showCreateMasterForm)
+                {
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <strong style="font-size: 0.85rem; color: #166534;">Новый общий курс:</strong>
+                        <input type="text" @bind="masterTitle" placeholder="Название (например: С# с нуля)" style="padding: 0.4rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;" />
+                        <input type="text" @bind="masterDescription" placeholder="Краткое описание курса" style="padding: 0.4rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;" />
+                        <button type="button" style="background: #166534; color: white; border: none; padding: 0.4rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;" @onclick="CreateMasterRoadmap">
+                            Создать мастер-курс
+                        </button>
+                    </div>
+                }
+
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    @foreach (var rm in mentorMasterRoadmaps)
+                    {
+                        <div style="padding: 0.75rem; border: 1px solid @(selectedMasterRoadmapId == rm.Id ? "#2563eb" : "#e2e8f0"); background: @(selectedMasterRoadmapId == rm.Id ? "#f0fdf4" : "#ffffff"); border-radius: 10px; cursor: pointer;" @onclick="() => SelectMasterRoadmap(rm.Id)">
+                            <div style="font-weight: 600; color: #0f172a;">🎯 @rm.Title</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">ID на сервере: #@rm.Id</div>
+                        </div>
+                    }
+                </div>
+            </aside>
+
+            <main style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
+                @if (selectedMasterRoadmapId == 0)
+                {
+                    <div style="text-align: center; padding: 4rem 2rem; color: #94a3b8;">
+                        <h4>Выберите созданный общий курс слева, чтобы открыть ведомость успеваемости студентов</h4>
+                    </div>
+                }
+                else
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
+                        <h3 style="margin: 0; color: #0f172a;">📊 Студенты на курсе</h3>
+                        <button type="button" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: bold; font-size: 0.85rem; cursor: pointer;" @onclick="() => { showGroupTaskForm = !showGroupTaskForm; showTaskForm = false; }">
+                            📢 Выдать задание ВСЕЙ группе
+                        </button>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <span style="font-weight: bold; font-size: 0.9rem; color: #334155;">👥 Добавить студента в группу курса:</span>
+                        <select @bind="studentToEnrollId" style="padding: 0.4rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;">
+                            <option value="0">-- Выберите из списка --</option>
+                            @foreach (var s in students)
+                            {
+                                <option value="@s.Id">@s.UserName (@s.Email)</option>
+                            }
+                        </select>
+                        <button type="button" style="background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;" @onclick="EnrollStudentToGroup">
+                            Добавить в группу
+                        </button>
+                    </div>
+
+                    @if (showGroupTaskForm)
+                    {
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <h4 style="margin: 0; color: #1e40af;">📢 Создать задание для всех студентов курса</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Тип задания:</label>
+                                    <select @bind="groupTaskType" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;">
+                                        <option value="Video">🎬 Видео-разбор</option>
+                                        <option value="Link">🔗 Репозиторий / Ссылка</option>
+                                        <option value="Text">📝 Текстовое задание</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Название задания:</label>
+                                    <input type="text" @bind="groupTaskTitle" placeholder="Например: Лабораторная работа для группы" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;" />
+                                </div>
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Описание или ссылка на требования:</label>
+                                <textarea @bind="groupTaskContent" placeholder="Опишите требования к выполнению..." style="width:100%; height:70px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;"></textarea>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                                <button type="button" style="padding: 0.4rem 1rem; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px;" @onclick="() => showGroupTaskForm = false">Отмена</button>
+                                <button type="button" style="padding: 0.4rem 1.2rem; background: #2563eb; color: white; border: none; font-weight: bold; border-radius: 6px;" @onclick="SendGroupTask">Опубликовать</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!groupProgressList.Any())
+                    {
+                        <p style="color: #94a3b8; font-style: italic;">В этой группе пока нет студентов. Добавьте участников с помощью панели выше.</p>
+                    }
+                    else
+                    {
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            @foreach (var participant in groupProgressList)
+                            {
+                                <div style="padding: 1.25rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <div>
+                                            <strong style="font-size: 1.05rem; color: #0f172a;">👤 @participant.StudentName</strong>
+                                            <span style="font-size: 0.85rem; color: #64748b; margin-left: 1rem;">@participant.StudentEmail</span>
+                                        </div>
+                                        
+                                        <div style="display: flex; gap: 0.4rem;">
+                                            <button type="button" style="background: #10b981; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer;" @onclick='() => Nav.NavigateTo($"/canvas/{participant.StudentRoadmapId}")'>
+                                                🗺️ Открыть холст
+                                            </button>
+                                            <button type="button" style="background: #a855f7; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer;" @onclick="() => PrepareTaskModalGroup(participant.StudentId, participant.StudentRoadmapId)">
+                                                ➕ Выдать лично
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                                        <div style="flex: 1; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
+                                            <div style="width: @participant.Progress%; background: #10b981; height: 100%;"></div>
+                                        </div>
+                                        <span style="font-size: 0.85rem; font-weight: bold;">@participant.Progress%</span>
+                                    </div>
+
+                                    <div style="background: #ffffff; border: 1px solid #f3e8ff; border-radius: 8px; padding: 0.75rem;">
+                                        <div style="font-size: 0.8rem; font-weight: bold; color: #6b21a8; margin-bottom: 0.5rem; border-bottom: 1px solid #f3e8ff; padding-bottom: 0.25rem;">
+                                            📌 Назначенные задания и решения:
+                                        </div>
+
+                                        @if (studentTasksCache.TryGetValue(participant.StudentRoadmapId, out var tasks) && tasks.Any())
+                                        {
+                                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                                @foreach (var t in tasks)
+                                                {
+                                                    <div style="font-size: 0.8rem; background: #fef8ff; padding: 0.6rem; border-radius: 6px; border: 1px solid #f3e8ff; display: flex; flex-direction: column; gap: 0.25rem;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                            <span><b>@t.Title</b> (@(t.TaskType == "Video" ? "🎬 Видео" : t.TaskType == "Link" ? "🔗 Ссылка" : "📝 Текст")) @(t.IsGroupTask ? "👥 [Группа]" : "👤 [Личное]")</span>
+                                                            @if (t.Status == "Assigned") { <span style="color: #6b21a8; font-weight: bold;">[Выдано]</span> }
+                                                            else if (t.Status == "Submitted") { <span style="color: #ea580c; font-weight: bold;">[На проверке ⏳]</span> }
+                                                            else if (t.Status == "Approved") { <span style="color: #16a34a; font-weight: bold;">[Принято ✅]</span> }
+                                                            else if (t.Status == "Rejected") { <span style="color: #dc2626; font-weight: bold;">[На доработке ❌]</span> }
+                                                        </div>
+
+                                                        @if (!string.IsNullOrWhiteSpace(t.Content))
+                                                        {
+                                                            <div style="color: #64748b; font-size: 0.75rem; background: #f8fafc; padding: 0.25rem; border-radius: 4px;">Условие: @t.Content</div>
+                                                        }
+
+                                                        @if (!string.IsNullOrWhiteSpace(t.StudentResponse))
+                                                        {
+                                                            <div style="margin-top: 0.25rem; padding: 0.4rem; background: #fff; border: 1px dashed #cbd5e1; border-radius: 4px; color: #0f172a;">
+                                                                <b>Ответ учащегося:</b> <br/>
+                                                                @if (t.StudentResponse.StartsWith("http")) { <a href="@t.StudentResponse" target="_blank" style="color: #2563eb; text-decoration: underline;">@t.StudentResponse</a> }
+                                                                else { <span>@t.StudentResponse</span> }
+                                                            </div>
+                                                        }
+
+                                                        @if (t.Status == "Submitted")
+                                                        {
+                                                            <div style="margin-top: 0.4rem; display: flex; gap: 0.4rem; background: #fff; padding: 0.4rem; border-radius: 4px;">
+                                                                <input type="text" placeholder="Комментарий / замечание..." @bind="mentorCommentsInput[t.Id]" style="flex: 1; padding: 0.25rem; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px;" />
+                                                                <button type="button" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Rejected", t.IsGroupTask)'>Вернуть</button>
+                                                                <button type="button" style="background: #16a34a; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Approved", t.IsGroupTask)'>Принять</button>
+                                                            </div>
+                                                        }
+                                                        else if (!string.IsNullOrWhiteSpace(t.MentorComment))
+                                                        {
+                                                            <div style="color: #a21caf; font-size: 0.75rem; font-style: italic;">💬 Ваш фидбек: @t.MentorComment</div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span style="font-size: 0.75rem; color: #a4b3c6; font-style: italic;">Заданий пока нет.</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (showTaskForm)
+                    {
+                        <div style="margin-top: 2rem; padding: 1.5rem; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <h4 style="margin: 0; color: #6b21a8;">🎯 Назначить индивидуальную работу</h4>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Тип контента:</label>
+                                    <select @bind="taskType" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;">
+                                        <option value="Video">🎬 Видео-разбор (Ссылка)</option>
+                                        <option value="Link">🔗 Ссылка на проект (GitHub/Figma)</option>
+                                        <option value="Text">📝 Текстовая задача</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Название задания:</label>
+                                    <input type="text" @bind="taskTitle" placeholder="Например: Лабораторная №1" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Содержимое задания (Текст или URL):</label>
+                                <textarea @bind="taskContent" placeholder="Вставьте ссылку на материал или распишите требования..." style="width:100%; height:70px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;"></textarea>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                                <button type="button" style="padding: 0.4rem 1rem; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;" @onclick="() => showTaskForm = false">Отмена</button>
+                                <button type="button" style="padding: 0.4rem 1.2rem; background: #a855f7; color: white; border: none; font-weight: bold; border-radius: 6px; cursor: pointer;" @onclick="SendPersonalTask">Отправить студенту</button>
+                            </div>
+                        </div>
+                    }
+                }
+            </main>
+        </div>
+    }
+</div>
+
+@code {
+    private string token = "";
+    private string studentEmailInput = "";
+    private string activeTab = "students"; 
+    
+    private int selectedStudentId = 0;
+    private string selectedStudentName = "";
+    
+    private bool showManualForm = false;
+    private bool showAiForm = false;
+    private bool showCreateMasterForm = false; 
+    private bool showGroupTaskForm = false;
+    private bool showTaskForm = false; 
+
+    private string newTitle = "";
+    private string newDescription = "";
+    private string newCategory = "General";
+    private string aiGoal = "";
+    private string aiTimeline = "";
+
+    private string masterTitle = "";
+    private string masterDescription = "";
+
+    private int selectedMasterRoadmapId = 0;
+    private int studentToEnrollId = 0;
+    private int targetStudentIdForTask = 0;
+    private string taskType = "Video";
+    private string taskTitle = "";
+    private string taskContent = "";
+    private string groupTaskType = "Text";
+    private string groupTaskTitle = "";
+    private string groupTaskContent = "";
+    private Dictionary<int, string> mentorCommentsInput = new();
+    private List<StudentDto> students = [];
+    private List<RoadmapResponse> studentRoadmaps = [];
+    private List<RoadmapResponse> mentorMasterRoadmaps = [];
+    private List<GroupProgressDto> groupProgressList = [];
+    private Dictionary<int, List<TaskDto>> studentTasksCache = new();
+
+    public class StudentDto { public int Id { get; set; } public string UserName { get; set; } = ""; public string Email { get; set; } = ""; }
+    public class GroupProgressDto { public int StudentId { get; set; } public int StudentRoadmapId { get; set; } public string StudentName { get; set; } = ""; public string StudentEmail { get; set; } = ""; public int Progress { get; set; } }
+    
+    public class TaskDto { 
+        public int Id { get; set; } 
+        public string TaskType { get; set; } = "";
+        public string Title { get; set; } = ""; 
+        public string Content { get; set; } = "";
+        public string Status { get; set; } = "Assigned";
+        public string? StudentResponse { get; set; }
+        public string? MentorComment { get; set; }
+        public bool IsGroupTask { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await Js.InvokeAsync<string>("jiroad.loadToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Nav.NavigateTo("/auth/login", true);
+            return;
+        }
+        await LoadStudentsList();
+    }
+
+    private HttpClient Client()
+    {
+        // ИСПРАВЛЕНО: Умное переключение BaseAddress при запуске внутри Docker-контейнера
+        string baseAddress = Nav.BaseUri;
+        if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        {
+            baseAddress = "http://127.0.0.1:8080/";
+        }
+
+        var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return http;
+    }
+
+    private async Task LoadStudentsList()
+    {
+        try {
+            using var http = Client();
+            students = await http.GetFromJsonAsync<List<StudentDto>>("/api/roadmap/mentor/students/list") ?? [];
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task LoadMentorMasterRoadmaps()
+    {
+        try {
+            using var http = Client();
+            mentorMasterRoadmaps = await http.GetFromJsonAsync<List<RoadmapResponse>>("/api/roadmap/mentor/master-roadmaps") ?? [];
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task CreateMasterRoadmap()
+    {
+        if (string.IsNullOrWhiteSpace(masterTitle)) return;
+        try {
+            using var http = Client();
+            var payload = new { Title = masterTitle.Trim(), Description = masterDescription.Trim(), Category = "Курс", Difficulty = "Intermediate", Tags = "master", IsPublic = false };
+            var response = await http.PostAsJsonAsync("/api/roadmap/create", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                masterTitle = "";
+                masterDescription = ""; showCreateMasterForm = false;
+                await LoadMentorMasterRoadmaps();
+                await Js.InvokeVoidAsync("alert", "🚀 Общий курс (Группа) успешно создан!");
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task EnrollStudentToGroup()
+    {
+        if (selectedMasterRoadmapId == 0 || studentToEnrollId == 0) return;
+        try {
+            using var http = Client();
+            var response = await http.PostAsJsonAsync($"/api/roadmap/mentor/master-roadmaps/{selectedMasterRoadmapId}/enroll", new { studentId = studentToEnrollId });
+            if (response.IsSuccessStatusCode)
+            {
+                studentToEnrollId = 0;
+                await SelectMasterRoadmap(selectedMasterRoadmapId);
+                await Js.InvokeVoidAsync("alert", "🎯 Студент успешно зачислен в группу этого курса!");
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                await Js.InvokeVoidAsync("alert", "⚠️ Данный студент уже состоит в этой группе!");
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task SelectMasterRoadmap(int id)
+    {
+        selectedMasterRoadmapId = id;
+        showTaskForm = false; showGroupTaskForm = false;
+        studentTasksCache.Clear(); mentorCommentsInput.Clear();
+        try {
+            using var http = Client();
+            groupProgressList = await http.GetFromJsonAsync<List<GroupProgressDto>>($"/api/roadmap/mentor/master-roadmaps/{id}/progress") ?? [];
+            foreach (var p in groupProgressList)
+            {
+                var tasks = await http.GetFromJsonAsync<List<TaskDto>>($"/api/roadmap/mentor/students/personal-tasks/{p.StudentRoadmapId}") ?? [];
+                studentTasksCache[p.StudentRoadmapId] = tasks;
+                
+                foreach (var t in tasks)
+                {
+                    if (!mentorCommentsInput.ContainsKey(t.Id))
+                        mentorCommentsInput[t.Id] = "";
+                }
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private void PrepareTaskModalGroup(int studentId, int roadmapId)
+    {
+        targetStudentIdForTask = studentId;
+        selectedMasterRoadmapId = roadmapId; 
+        taskTitle = ""; taskContent = "";
+        showTaskForm = true; showGroupTaskForm = false;
+    }
+
+    private void PrepareTaskModalIndividual(int studentId, int roadmapId)
+    {
+        targetStudentIdForTask = studentId;
+        selectedMasterRoadmapId = roadmapId; 
+        taskTitle = ""; taskContent = "";
+        showTaskForm = true;
+    }
+
+    private async Task SendPersonalTask()
+    {
+        if (string.IsNullOrWhiteSpace(taskTitle) || string.IsNullOrWhiteSpace(taskContent)) return;
+        try {
+            using var http = Client();
+            var payload = new { StudentId = targetStudentIdForTask, RoadmapId = selectedMasterRoadmapId, TaskType = taskType, Title = taskTitle.Trim(), Content = taskContent.Trim() };
+            var response = await http.PostAsJsonAsync("/api/roadmap/mentor/tasks/assign", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                showTaskForm = false;
+                if (activeTab == "groups") {
+                    await SelectMasterRoadmap(selectedMasterRoadmapId); 
+                } else {
+                    await RefreshStudentRoadmaps();
+                }
+                await Js.InvokeVoidAsync("alert", "🎯 Индивидуальное задание успешно отправлено!");
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task SendGroupTask()
+    {
+        if (string.IsNullOrWhiteSpace(groupTaskTitle) || string.IsNullOrWhiteSpace(groupTaskContent)) return;
+        try {
+            using var http = Client();
+            var payload = new { RoadmapId = selectedMasterRoadmapId, TaskType = groupTaskType, Title = groupTaskTitle.Trim(), Content = groupTaskContent.Trim() };
+            var response = await http.PostAsJsonAsync("/api/roadmap/mentor/tasks/assign-group", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                showGroupTaskForm = false;
+                groupTaskTitle = ""; groupTaskContent = "";
+                await SelectMasterRoadmap(selectedMasterRoadmapId);
+                await Js.InvokeVoidAsync("alert", "📢 Общее задание опубликовано для всей группы!");
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task ReviewTask(int taskId, string status, bool isGroupTask)
+    {
+        mentorCommentsInput.TryGetValue(taskId, out var comment);
+        try {
+            using var http = Client();
+            var payload = new { TaskId = taskId, Status = status, Comment = comment ?? "", IsGroupTask = isGroupTask };
+            var response = await http.PostAsJsonAsync("/api/roadmap/mentor/tasks/review", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                if (activeTab == "groups") {
+                    await SelectMasterRoadmap(selectedMasterRoadmapId);
+                } else {
+                    await RefreshStudentRoadmaps();
+                }
+                await Js.InvokeVoidAsync("alert", "Вердикт проверки успешно сохранен!");
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task SelectStudent(int id, string name)
+    {
+        selectedStudentId = id;
+        selectedStudentName = name;
+        showManualForm = false; showAiForm = false; showTaskForm = false;
+        await RefreshStudentRoadmaps();
+    }
+
+    private async Task RefreshStudentRoadmaps()
+    {
+        studentTasksCache.Clear();
+        mentorCommentsInput.Clear();
+        try {
+            using var http = Client();
+            studentRoadmaps = await http.GetFromJsonAsync<List<RoadmapResponse>>($"/api/roadmap/mentor/students/{selectedStudentId}/roadmaps") ?? [];
+            
+            foreach (var rm in studentRoadmaps)
+            {
+                var tasks = await http.GetFromJsonAsync<List<TaskDto>>($"/api/roadmap/mentor/students/personal-tasks/{rm.Id}") ?? [];
+                studentTasksCache[rm.Id] = tasks;
+                
+                foreach (var t in tasks)
+                {
+                    if (!mentorCommentsInput.ContainsKey(t.Id))
+                        mentorCommentsInput[t.Id] = "";
+                }
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task CreateManualRoadmapForStudent()
+    {
+        if (string.IsNullOrWhiteSpace(newTitle) || selectedStudentId == 0) return;
+        try {
+            using var http = Client();
+            var payload = new { Title = newTitle.Trim(), Description = newDescription.Trim(), Category = newCategory.Trim(), Difficulty = "Beginner", Tags = "assigned", IsPublic = false };
+            var response = await http.PostAsJsonAsync($"/api/roadmap/mentor/students/{selectedStudentId}/create-manual", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                newTitle = "";
+                newDescription = ""; showManualForm = false;
+                await RefreshStudentRoadmaps();
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task GenerateAiRoadmapForStudent()
+    {
+        if (string.IsNullOrWhiteSpace(aiGoal) || selectedStudentId == 0) return;
+        try {
+            using var http = Client();
+            var payload = new { Goal = aiGoal.Trim(), Timeline = aiTimeline.Trim(), CurrentLevel = "Beginner", Category = "Программирование" };
+            var response = await http.PostAsJsonAsync($"/api/roadmap/mentor/students/{selectedStudentId}/create-ai", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                aiGoal = "";
+                aiTimeline = ""; showAiForm = false;
+                await RefreshStudentRoadmaps();
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+
+    private async Task AddStudent()
+    {
+        if (string.IsNullOrWhiteSpace(studentEmailInput)) return;
+        try {
+            using var http = Client();
+            var response = await http.PostAsJsonAsync("/api/roadmap/mentor/students/add", new { email = studentEmailInput.Trim() });
+            if (response.IsSuccessStatusCode)
+            {
+                studentEmailInput = "";
+                await LoadStudentsList();
+                await Js.InvokeVoidAsync("alert", "🚀 Ученик успешно привязан!");
+            }
+        } catch (Exception ex) { Console.WriteLine(ex.Message); }
+    }
+}

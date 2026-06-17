@@ -1,0 +1,330 @@
+@page "/dashboard"
+@layout WorkspaceLayout
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using JIroad.Api
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Мои Roadmap | JIroad</PageTitle>
+
+<div class="dashboard-wrapper" style="padding: 2rem; max-width: 1400px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
+
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);">
+        <div>
+            <h1 style="margin: 0; color: #0f172a; font-size: 1.85rem; font-weight: 700; letter-spacing: -0.02em;">🗺️ Рабочая зона JIroad</h1>
+            <p style="margin: 0.35rem 0 0 0; color: #64748b; font-size: 0.95rem;">Управляйте траекториями обучения, изучайте материалы и отслеживайте прогресс на бесконечном холсте</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; padding: 0.6rem 1.2rem; border-radius: 10px;" @onclick="NavigateToAiGenerator">🤖 ИИ-Генератор</button>
+            <button class="btn text-white" style="background: #2563eb; font-weight: 600; padding: 0.6rem 1.4rem; border-radius: 10px; border: none; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);" @onclick="CreateNewRoadmap">+ Создать Roadmap</button>
+        </div>
+    </header>
+
+    @if (isLoading)
+    {
+    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 300px; gap: 1rem;">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+        <span style="color: #64748b; font-weight: 500; font-size: 0.95rem;">Загрузка вашего рабочего пространства...</span>
+    </div>
+    }
+    else
+    {
+    @if (globalAnalytics != null && globalAnalytics.TotalRoadmaps > 0)
+    {
+    <section class="global-dashboard-metrics" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+
+        <div style="background: #ffffff; padding: 1.5rem; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 1.8rem; background: #f1f5f9; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">📋</div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Всего карт</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-top: 0.1rem;">@globalAnalytics.TotalRoadmaps</div>
+            </div>
+        </div>
+
+        <div style="background: #ffffff; padding: 1.5rem; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-left: 4px solid #22c55e;">
+            <div style="font-size: 1.8rem; background: #f0fdf4; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">🏆</div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Освоено (100%)</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #22c55e; margin-top: 0.1rem;">@globalAnalytics.FullyCompletedRoadmaps</div>
+            </div>
+        </div>
+
+        <div style="background: #ffffff; padding: 1.5rem; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-left: 4px solid #3b82f6;">
+            <div style="font-size: 1.8rem; background: #eff6ff; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">⏳</div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">В процессе</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #3b82f6; margin-top: 0.1rem;">@globalAnalytics.InProgressRoadmaps</div>
+            </div>
+        </div>
+
+        <div style="background: #ffffff; padding: 1.5rem; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-left: 4px solid #6366f1;">
+            <div style="font-size: 1.8rem; background: #f5f3ff; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">📈</div>
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Средний прогресс</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #6366f1; margin-top: 0.1rem;">@globalAnalytics.AverageGlobalProgress%</div>
+            </div>
+        </div>
+    </section>
+    }
+
+    <section class="mentor-tasks-section" style="margin-bottom: 3rem; background: #faf5ff; border: 1px solid #e9d5ff; padding: 1.5rem; border-radius: 16px;">
+        <h2 style="font-size: 1.3rem; color: #6b21a8; font-weight: 700; margin-top: 0; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            📝 Задания от вашего преподавателя (@studentTasks.Count)
+        </h2>
+
+        @if (!studentTasks.Any())
+        {
+        <p style="color: #7c3aed; font-style: italic; margin: 0; font-size: 0.95rem;">У вас пока нет активных проверочных заданий от ментора.</p>
+        }
+        else
+        {
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.25rem;">
+            @foreach (var task in studentTasks)
+            {
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid @(task.Status == "Approved" ? "#10b981" : task.Status == "Submitted" ? "#f59e0b" : task.Status == "Rejected" ? "#ef4444" : "#a855f7");">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+                        <h4 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">@task.Title</h4>
+                        <span style="font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569;">
+                                        @(task.IsGroupTask ? "👥 Группа" : "👤 Личное")
+                                    </span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.75rem;">
+                        Курс: <b>@task.RoadmapTitle</b> | Тип: @(task.TaskType == "Video" ? "🎬 Видео" : task.TaskType == "Link" ? "🔗 Ссылка" : "📝 Текст")
+                    </div>
+                    <div style="font-size: 0.85rem; color: #334155; background: #f8fafc; padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.75rem; border: 1px solid #e2e8f0; white-space: pre-line;">
+                        @task.Content
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(task.MentorComment))
+                    {
+                    <div style="font-size: 0.8rem; background: #fdf2f8; color: #9d174d; border: 1px solid #fce7f3; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.75rem;">
+                        💬 <b>Фидбек преподавателя:</b> @task.MentorComment
+                    </div>
+                    }
+                </div>
+
+                <div style="margin-top: 0.5rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 0.5rem;">
+                        <span style="color: #64748b;">Статус:</span>
+                        <span style="font-weight: bold; color: @(task.Status == "Approved" ? "#10b981" : task.Status == "Submitted" ? "#d97706" : task.Status == "Rejected" ? "#dc2626" : "#7c3aed");">
+                                        @if (task.Status == "Assigned") { <span>Назначено 📥</span> }
+                            else if (task.Status == "Submitted") { <span>На проверке ⏳</span> }
+                            else if (task.Status == "Approved") { <span>Принято ✅</span> }
+                            else if (task.Status == "Rejected") { <span>На доработку ❌</span> }
+                                    </span>
+                    </div>
+
+                    @if (task.Status == "Assigned" || task.Status == "Rejected")
+                    {
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        <input type="text" placeholder="Ссылка на GitHub/ответ текстом..." @bind="studentResponsesInput[task.Id]" style="width: 100%; padding: 0.4rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8rem;" />
+                        <button type="button" style="background: #6b21a8; color: white; border: none; font-weight: bold; padding: 0.4rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-align: center;" @onclick="() => SubmitTaskSolution(task.Id)">
+                            📤 Сдать работу ментору
+                        </button>
+                    </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(task.StudentResponse))
+                    {
+                    <div style="font-size: 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.4rem; border-radius: 6px; color: #166534; word-break: break-all;">
+                        <b>Ваш ответ:</b> @task.StudentResponse
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+        }
+    </section>
+
+    <h2 style="font-size: 1.3rem; color: #1e293b; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        📂 Ваши активные учебные траектории
+    </h2>
+
+    @if (roadmaps == null || roadmaps.Count == 0)
+    {
+    <div style="text-align: center; padding: 4rem 2rem; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
+        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🗺️</div>
+        <h3 style="font-size: 1.2rem; color: #0f172a; font-weight: 600; margin-bottom: 0.5rem;">Здесь пока пусто</h3>
+        <p style="color: #64748b; font-size: 0.95rem; max-width: 400px; margin: 0 auto 1.5rem auto;">Создайте дорожную карту вручную или сгенерируйте по любому тегу с помощью искусственного интеллекта.</p>
+        <button class="btn text-white" style="background: #2563eb; font-weight: 600; padding: 0.6rem 1.5rem; border-radius: 8px; border: none;" @onclick="CreateNewRoadmap">Создать первую карту</button>
+    </div>
+    }
+    else
+    {
+    <div class="roadmaps-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+        @foreach (var rm in roadmaps)
+        {
+        <div class="roadmap-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s ease-in-out; cursor: pointer;" @onclick="() => OpenCanvas(rm.Id)">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <h3 style="margin: 0; font-size: 1.2rem; color: #0f172a; font-weight: 700; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;" title="@rm.Title">@rm.Title</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span class="badge" style="background: #eff6ff; color: #1e40af; font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.6rem; border-radius: 6px;">@rm.Difficulty</span>
+                        <button type="button" style="background: none; border: none; color: #ef4444; font-size: 1.15rem; cursor: pointer; padding: 0.2rem; line-height: 1; transition: transform 0.1s ease;" title="Удалить дорожную карту" @onclick="() => ConfirmDeleteRoadmap(rm.Id, rm.Title)" @onclick:stopPropagation>
+                            🗑
+                        </button>
+                    </div>
+                </div>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.7rem; line-height: 1.5;">@rm.Description</p>
+            </div>
+
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #475569; margin-bottom: 0.5rem; font-weight: 500;">
+                    <span>Прогресс траектории</span>
+                    <span style="font-weight: 700; color: #0f172a;">@rm.Progress%</span>
+                </div>
+                <div style="width: 100%; background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden; margin-bottom: 1.25rem;">
+                    <div style="width: @rm.Progress%; background: @(rm.Progress == 100 ? "#22c55e" : "#2563eb"); height: 100%; transition: width 0.4s ease-out;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
+                    <span style="font-weight: 500; color: #64748b;">🧩 Этапов обучения: <b style="color: #0f172a;">@rm.NodesCount</b></span>
+                    <span style="color: #2563eb; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;">Редактор холста →</span>
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+    }
+    }
+</div>
+
+@code {
+private List<RoadmapResponse> roadmaps = new List<RoadmapResponse>();
+private GlobalDashboardAnalytics? globalAnalytics = null;
+private bool isLoading = true;
+private string token = "";
+
+private List<StudentTaskDto> studentTasks = [];
+private Dictionary<int, string> studentResponsesInput = new();
+
+public class StudentTaskDto
+{
+public int Id { get; set; }
+public string Title { get; set; } = "";
+public string Content { get; set; } = "";
+public string TaskType { get; set; } = "";
+public string Status { get; set; } = "Assigned";
+public string? StudentResponse { get; set; }
+public string? MentorComment { get; set; }
+public string RoadmapTitle { get; set; } = "";
+public bool IsGroupTask { get; set; }
+}
+
+protected override async Task OnInitializedAsync()
+{
+token = await Js.InvokeAsync<string>("jiroad.loadToken");
+if (string.IsNullOrWhiteSpace(token))
+{
+Nav.NavigateTo("/auth/login", true);
+return;
+}
+await LoadDashboardData();
+}
+
+private HttpClient Client()
+{
+    // ИСПРАВЛЕНО ДЛЯ DOCKER: Автоматический роутинг сетевого адреса внутри контейнеров
+    string baseAddress = Nav.BaseUri;
+    if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+    {
+        baseAddress = "http://127.0.0.1:8080/";
+    }
+
+    var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    return http;
+}
+
+private async Task LoadDashboardData()
+{
+isLoading = true;
+StateHasChanged();
+try
+{
+using var http = Client();
+var response = await http.GetFromJsonAsync<DashboardDataResponse>("/api/roadmap/list");
+if (response != null)
+{
+roadmaps = response.Roadmaps ?? new List<RoadmapResponse>();
+globalAnalytics = response.Analytics;
+}
+
+// Загружаем список персональных и групповых заданий текущего студента
+studentTasks = await http.GetFromJsonAsync<List<StudentTaskDto>>("/api/roadmap/student/tasks") ?? [];
+
+// ИСПРАВЛЕНИЕ ОШИБКИ KeyNotFoundException: Инициализируем словарь инпутов для двухсторонней привязки
+foreach (var task in studentTasks)
+{
+if (!studentResponsesInput.ContainsKey(task.Id))
+{
+studentResponsesInput[task.Id] = "";
+}
+}
+}
+catch (Exception ex)
+{
+Console.WriteLine($"[ОШИБКА ДАШБОРДА]: {ex.Message}");
+}
+finally
+{
+isLoading = false;
+StateHasChanged();
+}
+}
+
+private async Task SubmitTaskSolution(int taskId)
+{
+studentResponsesInput.TryGetValue(taskId, out var text);
+if (string.IsNullOrWhiteSpace(text)) return;
+
+try
+{
+using var http = Client();
+
+var payload = new { TaskId = taskId, Response = text.Trim() };
+var response = await http.PostAsJsonAsync("/api/roadmap/student/tasks/submit", payload);
+if (response.IsSuccessStatusCode)
+{
+studentResponsesInput[taskId] = "";
+await LoadDashboardData();
+await Js.InvokeVoidAsync("alert", "🚀 Ваша работа успешно отправлена ментору на проверку!");
+}
+}
+catch (Exception ex)
+{
+Console.WriteLine($"[ОШИБКА ОТПРАВКИ]: {ex.Message}");
+}
+}
+
+private async Task ConfirmDeleteRoadmap(int id, string title)
+{
+bool confirmed = await Js.InvokeAsync<bool>("confirm", $"Вы уверены, что хотите полностью удалить дорожную карту \"{title}\"? Это действие сотрет карту из базы данных и его нельзя будет отменить.");
+if (!confirmed) return;
+
+try
+{
+using var http = Client();
+
+var response = await http.DeleteAsync($"/api/roadmap/{id}");
+if (response.IsSuccessStatusCode)
+{
+await LoadDashboardData();
+}
+else
+{
+Console.WriteLine($"[ОШИБКА УДАЛЕНИЯ]: {response.StatusCode}");
+}
+}
+catch (Exception ex)
+{
+Console.WriteLine($"[ОШИБКА HTTP ПРИ УДАЛЕНИИ]: {ex.Message}");
+}
+}
+
+private void CreateNewRoadmap() => Nav.NavigateTo("/roadmaps/new");
+private void NavigateToAiGenerator() => Nav.NavigateTo("/ai-generator");
+private void OpenCanvas(int id) => Nav.NavigateTo($"/canvas/{id}");
+}

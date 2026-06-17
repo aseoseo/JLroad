@@ -1,0 +1,121 @@
+@page "/notifications"
+@layout WorkspaceLayout
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Центр Уведомлений | JIroad</PageTitle>
+
+<div style="padding: 2rem; max-width: 800px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
+    <h2 style="color: #0f172a; font-weight: 700; margin-bottom: 1.5rem;">🔔 Входящие уведомления</h2>
+
+    @if (notifications.Count == 0)
+    {
+        <div style="text-align: center; padding: 4rem 0; color: #94a3b8; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+            <span style="font-size: 3rem;">📭</span>
+            <p style="margin-top: 1rem; font-weight: 500;">У вас пока нет уведомлений.</p>
+        </div>
+    }
+    else
+    {
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            @foreach (var notif in notifications)
+            {
+                <div style="padding: 1.25rem; background: @(notif.IsRead ? "#ffffff" : "#f0f9ff"); border: 1px solid @(notif.IsRead ? "#e2e8f0" : "#bae6fd"); border-radius: 12px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01);"
+                     @onclick="() => HandleNotificationRouting(notif)">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong style="color: #0f172a; font-size: 1.05rem;">@notif.Title</strong>
+                        <span style="font-size: 0.8rem; color: #94a3b8;">@notif.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                    </div>
+                    <p style="margin: 0; color: #475569; font-size: 0.9rem;">@notif.Message</p>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string token = "";
+    private List<NotificationResponse> notifications = [];
+
+    public class NotificationResponse { public int Id { get; set; } public string Kind { get; set; } = ""; public string Title { get; set; } = ""; public string Message { get; set; } = ""; public bool IsRead { get; set; } public DateTime CreatedAtUtc { get; set; } }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            token = await Js.InvokeAsync<string>("jiroad.loadToken");
+            await LoadNotificationsHistory();
+            StateHasChanged();
+        }
+    }
+
+    private HttpClient Client()
+    {
+        // ИСПРАВЛЕНО: Умное переключение BaseAddress при запуске внутри Docker-контейнера
+        string baseAddress = Nav.BaseUri;
+        if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        {
+            baseAddress = "http://127.0.0.1:8080/";
+        }
+
+        return new HttpClient 
+        { 
+            BaseAddress = new Uri(baseAddress), 
+            DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Bearer", token) } 
+        };
+    }
+
+    private async Task LoadNotificationsHistory()
+    {
+        try { notifications = await Client().GetFromJsonAsync<List<NotificationResponse>>("/api/roadmap/notifications") ?? []; } catch {}
+    }
+
+    private async Task HandleNotificationRouting(NotificationResponse notif)
+    {
+        try 
+        {
+            // Помечаем уведомление как прочитанное на сервере
+            await Client().PostAsync($"/api/roadmap/notifications/{notif.Id}/read", null);
+            
+            string msg = notif.Message;
+            string kind = notif.Kind?.ToLowerInvariant() ?? "";
+
+            // УМНЫЙ АЛГОРИТМ ПАРСИНГА И РОУТИНГА УВЕДОМЛЕНИЙ:
+            // 1. Ищем явную ссылку на холст /canvas/ID внутри текста сообщения
+            if (msg.Contains("/canvas/"))
+            {
+                int start = msg.IndexOf("/canvas/");
+                string path = msg.Substring(start).Split(' ')[0].TrimEnd('.', '!', '?', ',', ')', ']');
+                Nav.NavigateTo(path);
+                return;
+            }
+
+            // 2. Если явной ссылки нет, распределяем маршруты на основе метаданных типа события (Kind)
+            switch (kind)
+            {
+                case "submission":
+                    // Студент сдал работу -> Ментора перенаправляет в ведомость проверки
+                    Nav.NavigateTo("/mentor/dashboard");
+                    break;
+                case "review":
+                    // Ментор проверил работу -> Студента отправляет в личный кабинет к задачам
+                    Nav.NavigateTo("/dashboard");
+                    break;
+                default:
+                    // Резервный роутинг по ключевым словам контекста сообщения
+                    if (msg.Contains("Преподаватель") || msg.Contains("ментор"))
+                    {
+                        Nav.NavigateTo("/dashboard");
+                    }
+                    else
+                    {
+                        Nav.NavigateTo("/mentor/dashboard");
+                    }
+                    break;
+            }
+        }
+        catch {}
+    }
+}

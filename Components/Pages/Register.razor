@@ -1,0 +1,160 @@
+@page "/auth/register"
+@using JIroad.Api
+@using System.Net.Http.Json
+@inject NavigationManager Nav
+@inject IJSRuntime Js
+
+<PageTitle>Регистрация | JIroad</PageTitle>
+
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: system-ui, sans-serif; padding: 1.5rem;">
+    <div style="background: #ffffff; padding: 2.5rem; border-radius: 20px; border: 1px solid #e2e8f0; width: 100%; max-width: 500px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="margin: 0; font-size: 1.8rem; color: #0f172a; font-weight: 800;">Создать аккаунт JIroad</h1>
+            <p style="margin: 0.4rem 0 0 0; color: #64748b; font-size: 0.9rem;">Выберите формат обучения и начните строить траекторию знаний</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="padding: 0.75rem 1rem; background: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 500;">
+                ⚠️ @errorMessage
+            </div>
+        }
+
+        <EditForm Model="regModel" OnValidSubmit="HandleRegister">
+            <div style="margin-bottom: 1.25rem;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Электронная почта</label>
+                <input type="email" @bind="regModel.Email" required style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none; transition: border 0.15s;" placeholder="name@example.com" />
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Пароль</label>
+                <input type="password" @bind="regModel.Password" required style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" placeholder="••••••••" />
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.6rem;">Кто вы?</label>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    
+                    <div style="padding: 0.85rem; border: 2px solid @(regModel.Role == "Mentor" ? "#2563eb" : "#e2e8f0"); background: @(regModel.Role == "Mentor" ? "#f8fafc" : "#ffffff"); border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 0.75rem;" @onclick="@(() => SetRole("Mentor"))">
+                        <span style="font-size: 1.3rem;">👨‍🏫</span>
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">Преподаватель (Ментор)</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.1rem;">Буду обучать студентов, проверять их холсты и тесты</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0.85rem; border: 2px solid @(regModel.Role == "SelfTaught" ? "#2563eb" : "#e2e8f0"); background: @(regModel.Role == "SelfTaught" ? "#f8fafc" : "#ffffff"); border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 0.75rem;" @onclick="@(() => SetRole("SelfTaught"))">
+                        <span style="font-size: 1.3rem;">🧠</span>
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">Самообучающийся</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.1rem;">Изучаю дорожные карты независимо для себя</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0.85rem; border: 2px solid @(regModel.Role == "Student" ? "#2563eb" : "#e2e8f0"); background: @(regModel.Role == "Student" ? "#f8fafc" : "#ffffff"); border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 0.75rem;" @onclick="@(() => SetRole("Student"))">
+                        <span style="font-size: 1.3rem;">🎒</span>
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">Работа с ментором (Ученик)</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.1rem;">У меня есть инвайт-код от моего преподавателя</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            @if (regModel.Role == "Student")
+            {
+                <div style="margin-bottom: 1.5rem; background: #f0fdf4; padding: 1rem; border-radius: 10px; border: 1px solid #bbf7d0;">
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #166534; display: block; margin-bottom: 0.4rem;">Инвайт-код преподавателя</label>
+                    <input type="text" @bind="regModel.MentorCode" required style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 6px; border: 1px solid #86efac; font-size: 1rem; font-weight: 700; letter-spacing: 0.05em; color: #14532d; text-transform: uppercase;" placeholder="Например: JR-123456" />
+                </div>
+            }
+
+            <button type="submit" class="text-white" style="width: 100%; background: #2563eb; font-weight: 600; padding: 0.75rem; border-radius: 10px; border: none; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.15);" disabled="@isSubmitting">
+                @(isSubmitting ? "Регистрация..." : "Зарегистрироваться")
+            </button>
+        </EditForm>
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #64748b;">
+            Уже есть аккаунт? <a href="/auth/login" style="color: #2563eb; font-weight: 600; text-decoration: none;">Войти</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterFormModel regModel = new() { Role = "SelfTaught" };
+    private string errorMessage = "";
+    private bool isSubmitting = false;
+
+    private void SetRole(string role)
+    {
+        regModel.Role = role;
+        if (role != "Student") regModel.MentorCode = null;
+    }
+
+    private async Task HandleRegister()
+    {
+        isSubmitting = true;
+        errorMessage = "";
+        try
+        {
+            // ИСПРАВЛЕНО: Умное переключение BaseAddress, если код выполняется внутри Docker-контейнера
+            string baseAddress = Nav.BaseUri;
+            if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+            {
+                baseAddress = "http://127.0.0.1:8080/";
+            }
+
+            using var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+            var response = await http.PostAsJsonAsync("/api/auth/register", regModel);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var authData = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+                if (authData != null)
+                {
+                    await Js.InvokeVoidAsync("jiroad.saveToken", authData.Token);
+                    
+                    if (authData.Role == "Mentor")
+                    {
+                        await Js.InvokeVoidAsync("alert", $"🎉 Аккаунт преподавателя создан!\nВаш уникальный код для подключения учеников: {authData.MentorCode}. Вы можете найти его в профиле.");
+                        Nav.NavigateTo("/mentor/dashboard", forceLoad: true);
+                    }
+                    else
+                    {
+                        Nav.NavigateTo("/dashboard", forceLoad: true);
+                    }
+                }
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка соединения с сервером: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class RegisterFormModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string? MentorCode { get; set; }
+    }
+
+    public class AuthResponseDto
+    {
+        public string Token { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string? MentorCode { get; set; }
+    }
+}

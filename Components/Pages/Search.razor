@@ -1,0 +1,108 @@
+@page "/search"
+@layout WorkspaceLayout
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>Поиск | JIroad</PageTitle>
+
+<h1>Поиск</h1>
+<section class="panel">
+    <form class="editor" @onsubmit="RunSearch" @onsubmit:preventDefault="true">
+        <input placeholder="Поиск roadmap, узлов, пользователей, материалов, тегов" @bind="q"/>
+        <select @bind="difficulty">
+            <option value="">Сложность: любая</option>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
+        </select>
+        <input placeholder="Категория" @bind="category"/>
+        
+        <select @bind="searchScope">
+            <option value="all">Искать везде</option>
+            <option value="my">Мои дорожные карты</option>
+            <option value="public">Общая библиотека</option>
+        </select>
+        
+        <button type="submit">Найти</button>
+    </form>
+</section>
+
+<section class="panel">
+    @if (isSearched && !items.Any())
+    {
+        <p style="color: #64748b; font-size: 0.95rem;">Ничего не найдено по вашему запросу.</p>
+    }
+    
+    <div class="cards">
+        @foreach (var roadmap in items)
+        {
+            <article>
+                <h3>@roadmap.Title</h3>
+                <div style="margin-bottom: 0.5rem;">
+                    @if (roadmap.IsPublic)
+                    {
+                        <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Общая библиотека</span>
+                    }
+                    else
+                    {
+                        <span style="background: #f0fdf4; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Личная</span>
+                    }
+                </div>
+                <p>@roadmap.Category · @roadmap.Difficulty · @roadmap.Progress%</p>
+                <a href="/canvas/@roadmap.Id">Открыть</a>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    private string q = "";
+    private string difficulty = "";
+    private string category = "";
+    
+    // ДОБАВЛЕНО: Переменные для управления областью поиска
+    private string searchScope = "all"; 
+    private bool isSearched = false;
+    
+    private List<RoadmapDto> items = [];
+
+    private async Task RunSearch()
+    {
+        var token = await Js.InvokeAsync<string>("jiroad.loadToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Nav.NavigateTo("/auth/login", true);
+            return;
+        }
+
+        // ИСПРАВЛЕНО ДЛЯ DOCKER: Умное переключение BaseAddress, если код выполняется внутри контейнера
+        string baseAddress = Nav.BaseUri;
+        if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        {
+            baseAddress = "http://127.0.0.1:8080/";
+        }
+
+        using var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        // ОБНОВЛЕНО: Добавлен параметр scope в URL запроса к твоему API
+        var url = $"/api/roadmap/search?q={Uri.EscapeDataString(q)}&difficulty={Uri.EscapeDataString(difficulty)}&category={Uri.EscapeDataString(category)}&scope={Uri.EscapeDataString(searchScope)}";
+        
+        items = await http.GetFromJsonAsync<List<RoadmapDto>>(url) ?? [];
+        isSearched = true;
+    }
+
+    private sealed class RoadmapDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Difficulty { get; set; } = "";
+        public int Progress { get; set; }
+        
+        // ДОБАВЛЕНО: Свойство для понимания, является ли карта публичным шаблоном
+        public bool IsPublic { get; set; }
+    }
+}
