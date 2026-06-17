@@ -33,6 +33,7 @@ builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 
 // УЛЬТРА-ОТКАЗОУСТОЙЧИВАЯ НАСТРОЙКА ПОДКЛЮЧЕНИЯ: Проверяет GetConnectionString, переменную окружения и прямую переменную Railway
+// УЛЬТРА-ОТКАЗОУСТОЙЧИВАЯ НАСТРОЙКА ПОДКЛЮЧЕНИЯ: Проверяет все источники
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
                        ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                        ?? Environment.GetEnvironmentVariable("DATABASE_URL");
@@ -42,7 +43,9 @@ if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("КРИТИЧЕСКАЯ ОШИБКА: Строка подключения DefaultConnection не найдена!");
 }
 
-// АВТОМАТИЧЕСКИЙ КАНВЕРТЕР: Если Railway прислал строку в формате postgresql://, пересобираем её для EF Core
+// ДОБАВЛЕНО ЛОГИРОВАНИЕ: Позволит увидеть в панели Railway, куда именно ломится приложение
+Console.WriteLine($"[DATABASE CONFIG]: Исходная строка найдена. Длина: {connectionString.Length}. Формат URL: {connectionString.StartsWith("postgresql://")}");
+
 if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
 {
     try
@@ -55,8 +58,11 @@ if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreC
         var port = uri.Port;
         var database = uri.AbsolutePath.TrimStart('/');
 
+        // Проверяем, если Railway передает специальный прокси-хост, или внутренний
+        Console.WriteLine($"[DATABASE PARSED]: Host={host}, Port={port}, DB={database}, User={username}");
+
         // Формируем валидный для Npgsql Connection String
-        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};Include Error Detail=true;";
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};Include Error Detail=true;Pooling=true;";
     }
     catch (Exception ex)
     {
