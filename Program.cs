@@ -18,13 +18,25 @@ using Microsoft.AspNetCore.Mvc;
 // В самом начале Program.cs, сразу после создания builder
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавляем поддержку переменных окружения явно
-builder.Configuration.AddEnvironmentVariables();
-
-// Настройка базы данных с приоритетом на переменные окружения
+// 1. Получаем строку из Railway или appsettings
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
                        ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("DATABASE_URL или ConnectionString не найдены!");
+}
+
+// 2. Если это Railway URL (начинается с postgresql://), приводим его к виду Host=...;
+if (connectionString.StartsWith("postgresql://"))
+{
+    var uri = new Uri(connectionString);
+    var userInfo = uri.UserInfo.Split(':');
+    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};Include Error Detail=true;Pooling=true;";
+}
+
+// 3. ОДИН РАЗ регистрируем контекст
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -39,6 +51,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<JwtTokenService>();
 
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
