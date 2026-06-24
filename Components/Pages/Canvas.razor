@@ -13,339 +13,331 @@
 
 <PageTitle>Редактор Roadmap | JIroad</PageTitle>
 
-<div class="roadmap-editor-full container-fluid p-0 d-flex flex-column" style="min-height: 100vh; overflow: hidden; background-color: #f8fafc;">
-    
-    <header class="board-top board-top-wide navbar navbar-expand-lg navbar-light bg-white border-bottom px-3 py-2 d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2" style="z-index: 1030;">
-        <div class="board-title fw-bold text-dark fs-5 align-self-center">Редактор roadmap #@RoadmapId</div>
-        <div class="board-actions d-flex flex-wrap align-items-center gap-2 justify-content-start justify-content-md-end">
-            <button class="btn btn-sm btn-outline-info" @onclick="NavigateToTests" style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600;">
+<div class="roadmap-editor-full">
+    <aside class="board-rail">
+        <button class="rail-btn rail-exit-btn" title="Выйти в главное меню" @onclick="GoToDashboard">🏠</button>
+        <div style="width: 100%; height: 1px; background: #e2e8f0; margin: 0.5rem 0;"></div>
+
+        <button class="rail-btn" title="Отменить действие (Ctrl+Z)" @onclick="Undo" disabled="@(!_undoStack.Any() || isReadOnly)" style="opacity: @(_undoStack.Any() && !isReadOnly ? "1" : "0.4")">↩</button>
+        <button class="rail-btn" title="Вернуть действие (Ctrl+Y)" @onclick="Redo" disabled="@(!_redoStack.Any() || isReadOnly)" style="opacity: @(_redoStack.Any() && !isReadOnly ? "1" : "0.4")">↪</button>
+        <div style="width: 100%; height: 1px; background: #e2e8f0; margin: 0.5rem 0;"></div>
+
+        <button class="rail-btn @(tool == ToolMode.Select ? "active" : "")" title="Выбор и перемещение" @onclick="@(() => SetTool(ToolMode.Select))">⌖</button>
+        <button class="rail-btn @(tool == ToolMode.Pan ? "active" : "")" title="Перемещение холста" @onclick="@(() => SetTool(ToolMode.Pan))">✥</button>
+        <button class="rail-btn @(tool == ToolMode.Connect ? "active" : "")" title="Управление связями" @onclick="@(() => SetTool(ToolMode.Connect))" disabled="@isReadOnly" style="opacity: @(isReadOnly ? "0.4" : "1")">↝</button>
+        <button class="rail-btn" title="Добавить узел" @onclick="CreateNodeQuick" disabled="@isReadOnly" style="opacity: @(isReadOnly ? "0.4" : "1")">＋</button>
+        <button class="rail-btn" title="Экспорт карты" @onclick="OpenExportModal">⇩</button>
+    </aside>
+
+    <header class="board-top board-top-wide">
+        <div class="board-title">Редактор roadmap #@RoadmapId</div>
+        <div class="board-actions">
+            <button class="ghost" @onclick="NavigateToTests" style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: #0284c7; border-color: rgba(2, 132, 199, 0.4);">
                 📝 Тесты карты
             </button>
             
             @if (!isReadOnly)
             {
-                <button class="btn btn-sm btn-outline-danger" @onclick="DeleteCurrentRoadmap" style="font-weight: 600;">
+                <button class="ghost" @onclick="DeleteCurrentRoadmap" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4); font-weight: 600;">
                     🗑 Удалить роадмап
                 </button>
 
-                <button class="btn btn-sm btn-outline-success" @onclick="PublishToLibrary" style="font-weight: 600;">
-                    📢 Опубликовать
+                <button class="ghost" @onclick="PublishToLibrary" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.4); font-weight: 600;">
+                    📢 Опубликовать в общие шаблоны
                 </button>
 
-                <button class="btn btn-sm btn-outline-secondary" @onclick="AutoLayout">Автораскладка</button>
+                <button class="ghost" @onclick="AutoLayout">Автораскладка</button>
             }
             else
             {
-                <div class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 small fw-semibold" style="display: inline-flex; align-items: center;">
+                <div style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center;">
                     🔒 Режим чтения структуры
                 </div>
             }
 
-            <button class="btn btn-sm btn-outline-secondary" @onclick="ResetView">Сброс вида</button>
-            <button class="btn btn-sm btn-outline-primary" @onclick="NavigateToAnalytics" style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600;">
+            <button class="ghost" @onclick="ResetView">Сброс вида</button>
+            <button class="ghost" @onclick="NavigateToAnalytics" style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: #4f46e5;">
                 📊 Аналитика прогресса
             </button>
             
             @if (!isReadOnly)
             {
-                <button class="btn btn-sm btn-primary px-3" @onclick="CreateNodeQuick">+ Узел</button>
+                <button class="cta" @onclick="CreateNodeQuick">+ Узел</button>
             }
         </div>
     </header>
 
-    <div class="d-flex flex-column flex-lg-row flex-grow-1 position-relative" style="height: calc(100vh - 60px); overflow: hidden;">
+    <section id="main-board-canvas" class="board-canvas" 
+             style="position: absolute; inset: 0; top: 60px; bottom: 0; overflow: hidden; cursor: @(panning ? "grabbing" : _isDrawingEdge ? "crosshair" : "default");"
+             @onwheel="OnWheel" 
+             @onpointerdown="OnCanvasPointerDown" 
+             @onpointermove="OnCanvasPointerMove" 
+             @onpointerup="OnCanvasPointerUp" 
+             @onpointerleave="OnCanvasPointerUp">
         
-        <aside class="board-rail bg-white border-end d-flex flex-row flex-lg-column align-items-center justify-content-center justify-content-lg-start p-2 gap-1" style="z-index: 1020; min-width: 56px;">
-            <button class="btn btn-light rail-btn rail-exit-btn" title="Выйти в главное меню" @onclick="GoToDashboard">🏠</button>
-            <div class="d-none d-lg-block w-100 my-1" style="height: 1px; background: #e2e8f0;"></div>
-
-            <button class="btn btn-light rail-btn" title="Отменить действие (Ctrl+Z)" @onclick="Undo" disabled="@(!_undoStack.Any() || isReadOnly)" style="opacity: @(_undoStack.Any() && !isReadOnly ? "1" : "0.4")">↩</button>
-            <button class="btn btn-light rail-btn" title="Вернуть действие (Ctrl+Y)" @onclick="Redo" disabled="@(!_redoStack.Any() || isReadOnly)" style="opacity: @(_redoStack.Any() && !isReadOnly ? "1" : "0.4")">↪</button>
-            <div class="d-none d-lg-block w-100 my-1" style="height: 1px; background: #e2e8f0;"></div>
-
-            <button class="btn @(tool == ToolMode.Select ? "btn-primary text-white" : "btn-light") rail-btn" title="Выбор и перемещение" @onclick="@(() => SetTool(ToolMode.Select))">⌖</button>
-            <button class="btn @(tool == ToolMode.Pan ? "btn-primary text-white" : "btn-light") rail-btn" title="Перемещение холста" @onclick="@(() => SetTool(ToolMode.Pan))">✥</button>
-            <button class="btn @(tool == ToolMode.Connect ? "btn-primary text-white" : "btn-light") rail-btn" title="Управление связями" @onclick="@(() => SetTool(ToolMode.Connect))" disabled="@isReadOnly" style="opacity: @(isReadOnly ? "0.4" : "1")">↝</button>
-            <button class="btn btn-light rail-btn" title="Добавить узел" @onclick="CreateNodeQuick" disabled="@isReadOnly" style="opacity: @(isReadOnly ? "0.4" : "1")">＋</button>
-            <button class="btn btn-light rail-btn" title="Экспорт карты" @onclick="OpenExportModal">⇩</button>
-        </aside>
-
-        <section id="main-board-canvas" class="board-canvas flex-grow-1 position-relative overflow-hidden w-100 h-100" 
-                 style="cursor: @(panning ? "grabbing" : _isDrawingEdge ? "crosshair" : "default"); background-color: #f8fafc;"
-                 @onwheel="OnWheel" 
-                 @onpointerdown="OnCanvasPointerDown" 
-                 @onpointermove="OnCanvasPointerMove" 
-                 @onpointerup="OnCanvasPointerUp" 
-                 @onpointerleave="OnCanvasPointerUp">
+        <div class="board-grid" style="@TransformStyle"></div>
+    
+        <div class="board-infinite-surface" style="position: absolute; inset: 0; pointer-events: none; transform-origin: 0 0; @TransformStyle">
             
-            <div class="board-grid position-absolute inset-0" style="@TransformStyle"></div>
-        
-            <div class="board-infinite-surface position-absolute inset-0" style="pointer-events: none; transform-origin: 0 0; @TransformStyle">
-                
-                <svg class="board-edges position-absolute" style="width: 10000px; height: 10000px; top: 0; left: 0; overflow: visible; z-index: 2; pointer-events: auto;">
-                    <defs>
-                        <marker id="edgeArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                            <polygon points="0 0, 8 4, 0 8" fill="#6078a8"/>
-                        </marker>
-                    </defs>
-                    @foreach (var edge in edges)
-                    {
-                        var from = nodes.FirstOrDefault(x => x.Id == edge.FromNodeId);
-                        var to = nodes.FirstOrDefault(x => x.Id == edge.ToNodeId);
-                        if (from is null || to is null) continue;
-                        
-                        <path d="@Path(from, to, edge)" 
-                              class="board-edge-path @EdgeClass(edge) @((_hoveredEdgeId == edge.Id || selectedEdgeId == edge.Id) ? "selected-edge" : "")" 
-                              stroke="@edge.Color" 
-                              stroke-width="@Math.Max(2, edge.Thickness)" 
-                              fill="none" 
-                              style="pointer-events: stroke;"
-                              marker-end="url(#edgeArrow)" />
-                    }
-
-                    @if (_isDrawingEdge && _edgeSourceNode != null)
-                    {
-                        <path d="@CalculatePreviewBezier(_edgeSourceNode, _currentMouseX, _currentMouseY)" 
-                              stroke="#3b82f6" stroke-width="2.5" stroke-dasharray="6 4" fill="none" marker-end="url(#edgeArrow)" />
-                    }
-                </svg>
-
-                <div class="board-infinite-surface position-absolute inset-0" style="pointer-events: none; z-index: 2;">
-                    @foreach (var node in nodes)
-                    {
-                        <article class="board-node @(selectedNodeIds.Contains(node.Id) ? "selected" : "") @(node.Status == "Completed" ? "completed" : "")"
-                                 style="@($"position: absolute !important; display: block !important; left:{node.X.ToString(CultureInfo.InvariantCulture)}px; top:{node.Y.ToString(CultureInfo.InvariantCulture)}px; {(pendingSourceNodeId == node.Id ? "outline: 4px dashed #3b82f6; outline-offset: 4px;" : "")} pointer-events: auto;")"
-                                 @onpointerdown="@(e => OnNodePointerDown(node.Id, e))"
-                                 @onpointerup="@(() => ConnectEdge(node))"
-                                 @onclick="@(() => NavigateToNode(node.Id))"
-                                 @onclick:stopPropagation>
-                            
-                            <div class="node-internal-content" style="@(_isDrawingEdge ? "pointer-events: none;" : "")">
-                                <h4>@node.Title</h4>
-                                <p>@node.Type · @node.Difficulty</p>
-                                <div style="width:100%; background:#e2e8f0; height:6px; border-radius:4px; margin-top:8px; overflow:hidden;">
-                                    <div style="width:@node.Progress%; background:@(node.Progress == 100 ? "#22c55e" : "#3b82f6"); height:100%; transition:width 0.3s;"></div>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; margin-top:4px; font-size: 0.75rem; color: #64748b;">
-                                    <span>@GetStatusText(node.Status)</span>
-                                    <span>@node.Progress%</span>
-                                </div>
-                            </div>
-
-                            @if (!isReadOnly)
-                            {
-                                <div class="node-magnet-handle" 
-                                     @onpointerdown="@(e => StartDrawingEdge(e, node))"
-                                     @onpointerdown:stopPropagation
-                                     title="Вытянуть связь">
-                                    ＋
-                                </div>
-                            }
-                        </article>
-                    }
-                </div>
-                
-            </div>
-
-            <button class="canvas-floating-save-btn btn shadow-lg border @(_isSavingNow ? "saving btn-secondary" : _justSavedAlert ? "btn-success text-white" : "btn-primary text-white") position-absolute" 
-                    style="bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 1010; border-radius: 30px; font-weight: 600; padding: 0.6rem 1.5rem;"
-                    @onclick="SaveEntireRoadmapExplicitly" 
-                    title="Сохранить изменения расположения узлов">
-                @if (_isSavingNow)
+            <svg class="board-edges" style="position: absolute; width: 10000px; height: 10000px; top: 0; left: 0; overflow: visible; z-index: 2; pointer-events: auto;">
+                <defs>
+                    <marker id="edgeArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                        <polygon points="0 0, 8 4, 0 8" fill="#6078a8"/>
+                    </marker>
+                </defs>
+                @foreach (var edge in edges)
                 {
-                    <span class="save-spinner me-2"></span>
-                    <span>Сохранение...</span>
-                }
-                else if (_justSavedAlert)
-                {
-                    <span>✓ Успешно сохранено в БД!</span>
-                }
-                else
-                {
-                    <span>💾 Сохранить прогресс</span>
-                }
-            </button>
-        </section>
-        
-        <aside class="board-panel jiroad-scrollable-panel bg-white border-start p-3 d-flex flex-column col-12 col-lg-3 position-relative" style="z-index: 1025; max-height: 100%; overflow-y: auto;">
-            <h3 class="h5 fw-bold text-dark border-bottom pb-2 mb-3">Панель управления</h3>
-            <div class="mb-3">
-                <p class="text-muted small m-0">Текущий инструмент: <strong class="text-dark">@ToolName(tool)</strong></p>
-            </div>
-
-            @if (tool == ToolMode.Connect && !isReadOnly)
-            {
-                <div class="editor border rounded p-3 bg-light mb-3">
-                    <p class="fw-bold mb-2 small">Создание связи кликом</p>
-                    <label class="form-label small fw-semibold text-secondary mb-1">Тип новой связи:</label>
-                    <select @bind="edgeType" class="form-select form-select-sm mb-3">
-                        <option>Зависимость</option>
-                        <option>Альтернативный путь</option>
-                        <option>Параллельный путь</option>
-                        <option>Ссылка</option>
-                    </select>
+                    var from = nodes.FirstOrDefault(x => x.Id == edge.FromNodeId);
+                    var to = nodes.FirstOrDefault(x => x.Id == edge.ToNodeId);
+                    if (from is null || to is null) continue;
                     
-                    @if (pendingSourceNodeId == 0)
-                    {
-                        <div class="p-2 border border-info-subtle bg-info-subtle rounded text-info-emphasis small">
-                            <span class="fs-6 me-1">👆</span> <b>Шаг 1:</b> Кликните по узлу, ОТ которого пойдет стрелка.
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="p-2 border border-success-subtle bg-success-subtle rounded text-success-emphasis small">
-                            <span class="fs-6 me-1">🎯</span> <b>Шаг 2:</b> Теперь кликните по узлу, К которому привязываем.
-                        </div>
-                        <button type="button" class="btn btn-sm btn-secondary w-100 mt-2" @onclick="@(() => pendingSourceNodeId = 0)">Отменить выбор</button>
-                    }
-                </div>
-                
-                <div class="editor border-top border-secondary-subtle border-2 pt-2 d-flex flex-column" style="flex: 1; min-height: 200px;">
-                    <p class="fw-bold text-dark small mb-2">🔗 Список всех связей карты:</p>
-                    @if (edges.Count == 0)
-                    {
-                        <p class="text-muted fst-italic small">На этой карте пока нет связей.</p>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-column gap-2 overflow-y-auto pe-1" style="max-height: 300px;">
-                            @foreach (var edge in edges)
-                            {
-                                var fromName = nodes.FirstOrDefault(n => n.Id == edge.FromNodeId)?.Title ?? $"Узел {edge.FromNodeId}";
-                                var toName = nodes.FirstOrDefault(n => n.Id == edge.ToNodeId)?.Title ?? $"Узел {edge.ToNodeId}";
-                                
-                                <div class="d-flex justify-content-between align-items-center p-2 bg-light border rounded small"
-                                     style="transition: background 0.2s;"
-                                     @onmouseenter="@(() => _hoveredEdgeId = edge.Id)"
-                                     @onmouseleave="@(() => _hoveredEdgeId = 0)">
-                                    <div class="text-truncate pe-2" style="flex: 1;" title="@fromName ➔ @toName (@edge.EdgeType)">
-                                        <b class="text-dark">@fromName</b> ➔ <b class="text-dark">@toName</b>
-                                        <div class="text-muted" style="font-size: 0.75rem;">@edge.EdgeType</div>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-danger px-2 py-0 fs-6" style="line-height: 1.2;"
-                                            @onclick="@(() => DeleteSpecificEdgeFromList(edge.Id))">
-                                        🗑
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-            else if (tool == ToolMode.Select || tool == ToolMode.Pan)
-            {
-                @if (selectedNodeIds.Count == 1)
+                    <path d="@Path(from, to, edge)" 
+                          class="board-edge-path @EdgeClass(edge) @((_hoveredEdgeId == edge.Id || selectedEdgeId == edge.Id) ? "selected-edge" : "")" 
+                          stroke="@edge.Color" 
+                          stroke-width="@Math.Max(2, edge.Thickness)" 
+                          fill="none" 
+                          style="pointer-events: stroke;"
+                          marker-end="url(#edgeArrow)" />
+                }
+
+                @if (_isDrawingEdge && _edgeSourceNode != null)
                 {
-                    var selected = nodes.FirstOrDefault(n => n.Id == selectedNodeIds.First());
-                    if (selected != null)
-                    {
-                        <form class="editor border rounded p-3 bg-light" @onsubmit="@(() => UpdateSelectedNode(selected))" @onsubmit:preventDefault="true">
-                            <p class="fw-bold mb-2 small text-dark">Редактирование узла</p>
-                            <input class="form-control form-control-sm mb-2" placeholder="Название узла" @bind="selected.Title" readonly="@isReadOnly" />
-                            <input class="form-control form-control-sm mb-2" placeholder="Описание" @bind="selected.Description" readonly="@isReadOnly" />
-                            <select class="form-select form-select-sm mb-2" @bind="selected.Type" disabled="@isReadOnly">
-                                <option>Тема</option><option>Навык</option><option>Проект</option><option>Тест</option><option>Контрольная точка</option>
-                            </select>
-                            <select class="form-select form-select-sm mb-2" @bind="selected.Difficulty" disabled="@isReadOnly">
-                                <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
-                            </select>
-                            
-                            <select class="form-select form-select-sm mb-2" @bind="selected.Status">
-                                <option value="Planned">Не начато</option>
-                                <option value="In Progress">В процессе</option>
-                                <option value="Completed">Завершено</option>
-                            </select>
-                            <div class="d-flex align-items-center gap-2 my-2 w-100">
-                                <input type="range" class="form-range" min="0" max="100" @bind="selected.Progress" style="flex:1;" />
-                                <span class="badge bg-secondary text-white small" style="min-width: 40px;">@selected.Progress%</span>
+                    <path d="@CalculatePreviewBezier(_edgeSourceNode, _currentMouseX, _currentMouseY)" 
+                          stroke="#3b82f6" stroke-width="2.5" stroke-dasharray="6 4" fill="none" marker-end="url(#edgeArrow)" />
+                }
+            </svg>
+
+            <div class="board-infinite-surface" style="position: absolute; inset: 0; pointer-events: none; z-index: 2;">
+                @foreach (var node in nodes)
+                {
+                    <article class="board-node @(selectedNodeIds.Contains(node.Id) ? "selected" : "") @(node.Status == "Completed" ? "completed" : "")"
+                             style="@($"position: absolute !important; display: block !important; left:{node.X.ToString(CultureInfo.InvariantCulture)}px; top:{node.Y.ToString(CultureInfo.InvariantCulture)}px; {(pendingSourceNodeId == node.Id ? "outline: 4px dashed #3b82f6; outline-offset: 4px;" : "")} pointer-events: auto;")"
+                             @onpointerdown="@(e => OnNodePointerDown(node.Id, e))"
+                             @onpointerup="@(() => ConnectEdge(node))"
+                             @onclick="@(() => NavigateToNode(node.Id))"
+                             @onclick:stopPropagation>
+                        
+                        <div class="node-internal-content" style="@(_isDrawingEdge ? "pointer-events: none;" : "")">
+                            <h4>@node.Title</h4>
+                            <p>@node.Type · @node.Difficulty</p>
+                            <div style="width:100%; background:#e2e8f0; height:6px; border-radius:4px; margin-top:8px; overflow:hidden;">
+                                <div style="width:@node.Progress%; background:@(node.Progress == 100 ? "#22c55e" : "#3b82f6"); height:100%; transition:width 0.3s;"></div>
                             </div>
-                            <button type="submit" class="btn btn-sm btn-primary w-100 mt-1">Сохранить изменения</button>
-                        </form>
+                            <div style="display:flex; justify-content:space-between; margin-top:4px; font-size: 0.75rem; color: #64748b;">
+                                <span>@GetStatusText(node.Status)</span>
+                                <span>@node.Progress%</span>
+                            </div>
+                        </div>
 
                         @if (!isReadOnly)
                         {
-                            <div class="w-100 mt-3">
-                                <button type="button" class="btn btn-sm btn-danger w-100" @onclick="DeleteSelectedNodes">🗑 Удалить узел</button>
+                            <div class="node-magnet-handle" 
+                                 @onpointerdown="@(e => StartDrawingEdge(e, node))"
+                                 @onpointerdown:stopPropagation
+                                 title="Вытянуть связь">
+                                ＋
                             </div>
                         }
-                    }
+                    </article>
+                }
+            </div>
+            
+        </div>
+
+        <button class="canvas-floating-save-btn @(_isSavingNow ? "saving" : "")" 
+                @onclick="SaveEntireRoadmapExplicitly" 
+                title="Сохранить изменения расположения узлов">
+            @if (_isSavingNow)
+            {
+                <span class="save-spinner"></span>
+                <span>Сохранение...</span>
+            }
+            else if (_justSavedAlert)
+            {
+                <span>✓ Успешно сохранено в БД!</span>
+            }
+            else
+            {
+                <span>💾 Сохранить прогресс</span>
+            }
+        </button>
+    </section>
+    
+    <aside class="board-panel jiroad-scrollable-panel">
+        <h3>Панель</h3>
+        <div style="margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+            <p class="fine">Инструмент: <strong>@ToolName(tool)</strong></p>
+        </div>
+
+        @if (tool == ToolMode.Connect && !isReadOnly)
+        {
+            <div class="editor" style="margin-bottom: 1.5rem;">
+                <p><strong>Создание связи кликом</strong></p>
+                <label style="font-size: 0.8rem; font-weight: bold;">Тип новой связи:</label>
+                <select @bind="edgeType" style="margin-bottom: 1rem; width: 100%;">
+                    <option>Зависимость</option>
+                    <option>Альтернативный путь</option>
+                    <option>Параллельный путь</option>
+                    <option>Ссылка</option>
+                </select>
+                
+                @if (pendingSourceNodeId == 0)
+                {
+                    <div style="padding: 10px; background: #eff6ff; border-radius: 6px; color: #1e3a8a; font-size: 0.85rem;">
+                        <span style="font-size: 1.2rem;">👆</span> <b>Шаг 1:</b> Кликните по узлу, ОТ которого пойдет стрелка.
+                    </div>
                 }
                 else
                 {
+                    <div style="padding: 10px; background: #f0fdf4; border-radius: 6px; color: #166534; font-size: 0.85rem;">
+                        <span style="font-size: 1.2rem;">🎯</span> <b>Шаг 2:</b> Теперь Кликните по узлу, К которому привязываем.
+                    </div>
+                    <button type="button" class="ghost" style="margin-top: 0.5rem; width: 100%;" @onclick="@(() => pendingSourceNodeId = 0)">Отменить выбор</button>
+                }
+            </div>
+            
+            <div class="editor" style="border-top: 2px dashed #cbd5e1; padding-top: 1rem; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <p><strong>🔗 Список всех связей карты:</strong></p>
+                @if (edges.Count == 0)
+                {
+                    <p style="font-size: 0.85rem; font-style: italic; color: #64748b;">На этой карте пока нет связей.</p>
+                }
+                else
+                {
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 350px; overflow-y: auto; padding-right: 4px;">
+                        @foreach (var edge in edges)
+                        {
+                            var fromName = nodes.FirstOrDefault(n => n.Id == edge.FromNodeId)?.Title ?? $"Узел {edge.FromNodeId}";
+                            var toName = nodes.FirstOrDefault(n => n.Id == edge.ToNodeId)?.Title ?? $"Узел {edge.ToNodeId}";
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; transition: background 0.2s;"
+                                 @onmouseenter="@(() => _hoveredEdgeId = edge.Id)"
+                                 @onmouseleave="@(() => _hoveredEdgeId = 0)">
+                                <div style="flex: 1; padding-right: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@fromName ➔ @toName (@edge.EdgeType)">
+                                    <b>@fromName</b> ➔ <b>@toName</b>
+                                    <div style="font-size: 0.75rem; color: #64748b;">@edge.EdgeType</div>
+                                </div>
+                                <button type="button" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;"
+                                        @onclick="@(() => DeleteSpecificEdgeFromList(edge.Id))">
+                                    🗑
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else if (tool == ToolMode.Select || tool == ToolMode.Pan)
+        {
+            @if (selectedNodeIds.Count == 1)
+            {
+                var selected = nodes.FirstOrDefault(n => n.Id == selectedNodeIds.First());
+                if (selected != null)
+                {
+                    <form class="editor" @onsubmit="@(() => UpdateSelectedNode(selected))" @onsubmit:preventDefault="true">
+                        <p><strong>Редактирование узла</strong></p>
+                        <input style="width: 100%;" placeholder="Название узла" @bind="selected.Title" readonly="@isReadOnly" />
+                        <input style="width: 100%;" placeholder="Описание" @bind="selected.Description" readonly="@isReadOnly" />
+                        <select style="width: 100%;" @bind="selected.Type" disabled="@isReadOnly">
+                            <option>Тема</option><option>Навык</option><option>Проект</option><option>Тест</option><option>Контрольная точка</option>
+                        </select>
+                        <select style="width: 100%;" @bind="selected.Difficulty" disabled="@isReadOnly">
+                            <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+                        </select>
+                        
+                        <select style="width: 100%;" @bind="selected.Status">
+                            <option value="Planned">Не начато</option>
+                            <option value="In Progress">В процессе</option>
+                            <option value="Completed">Завершено</option>
+                        </select>
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem; width: 100%;">
+                            <input type="range" min="0" max="100" @bind="selected.Progress" style="flex:1;" />
+                            <span style="font-size:0.8rem; min-width: 35px;">@selected.Progress%</span>
+                        </div>
+                        <button type="submit" style="width: 100%; margin-top: 0.5rem;">Сохранить изменения</button>
+                    </form>
+
                     @if (!isReadOnly)
                     {
-                        <form class="editor border rounded p-3 bg-light" @onsubmit="CreateNode" @onsubmit:preventDefault="true">
-                            <p class="fw-bold mb-2 small text-dark">Создание нового узла</p>
-                            <input class="form-control form-control-sm mb-2" placeholder="Название узла" @bind="newNodeTitle"/>
-                            <input class="form-control form-control-sm mb-2" placeholder="Описание" @bind="newNodeDescription"/>
-                            <select class="form-select form-select-sm mb-3" @bind="newNodeType">
-                                <option>Тема</option><option>Навык</option><option>Проект</option><option>Тест</option><option>Контрольная точка</option>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary w-100">Добавить узел</button>
-                        </form>
-                    }
-                    else
-                    {
-                        <div class="p-3 border border-purple-subtle bg-purple-subtle rounded text-purple-emphasis small text-center shadow-sm">
-                            💡 Кликните по любому узлу на холсте, чтобы отметить статус изучения темы преподавателя.
+                        <div class="tool-row" style="margin-top: 1rem;">
+                            <button type="button" style="background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; width: 100%;" @onclick="DeleteSelectedNodes">🗑 Удалить узел</button>
                         </div>
                     }
                 }
             }
-        </aside>
-    </div>
+            else
+            {
+                @if (!isReadOnly)
+                {
+                    <form class="editor" @onsubmit="CreateNode" @onsubmit:preventDefault="true">
+                        <p><strong>Создание нового узла</strong></p>
+                        <input style="width: 100%;" placeholder="Название узла" @bind="newNodeTitle"/>
+                        <input style="width: 100%;" placeholder="Описание" @bind="newNodeDescription"/>
+                        <select style="width: 100%;" @bind="newNodeType">
+                            <option>Тема</option><option>Навык</option><option>Проект</option><option>Тест</option><option>Контрольная точка</option>
+                        </select>
+                        <button type="submit" style="width: 100%; margin-top: 0.5rem;">Добавить узел</button>
+                    </form>
+                }
+                else
+                {
+                    <div style="padding: 1rem; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 10px; font-size: 0.85rem; color: #6b21a8; text-align: center;">
+                        💡 Кликните по любому узлу на холсте, чтобы отметить статус изучения темы преподавателя.
+                    </div>
+                }
+            }
+        }
+    </aside>
 </div>
 
 @if (_showExportModal)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5); z-index: 1050;" @onclick="CloseExportModal">
-        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation>
-            <div class="modal-content shadow-lg border-0">
-                <header class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold text-dark">📦 Экспорт дорожной карты</h5>
-                    <button type="button" class="btn-close" @onclick="CloseExportModal"></button>
-                </header>
-                
-                <main class="modal-body d-flex flex-column gap-3 text-start">
-                    <div>
-                        <label class="form-label small fw-semibold text-secondary mb-1">📄 Формат экспорта данных:</label>
-                        <select @bind="_exportFormat" class="form-select form-select-sm">
-                            <option value="json">JSON файл (.json)</option>
-                            <option value="text">Простой текст этапов (.txt)</option>
-                            <option value="markdown">Markdown document (.md)</option>
-                        </select>
+    <div class="jiroad-modal-backdrop" @onclick="CloseExportModal">
+        <div class="jiroad-modal-window" @onclick:stopPropagation>
+            <header class="jiroad-modal-header">
+                <h3>📦 Экспорт дорожной карты</h3>
+                <button class="jiroad-modal-close-btn" @onclick="CloseExportModal">×</button>
+            </header>
+            
+            <main class="jiroad-modal-body">
+                <div class="modal-form-group">
+                    <label>📄 Формат экспорта данных:</label>
+                    <select @bind="_exportFormat">
+                        <option value="json">JSON файл (.json)</option>
+                        <option value="text">Простой текст этапов (.txt)</option>
+                        <option value="markdown">Markdown document (.md)</option>
+                    </select>
+                </div>
+
+                <div class="modal-form-group">
+                    <label>🔍 Что именно выгрузить:</label>
+                    <select @bind="_exportScope">
+                        <option value="all">Всю карту целиком (Структура, узлы, связи)</option>
+                        <option value="nodes">Только этапы (Названия, прогресс и описание)</option>
+                        <option value="edges">Только связи между этапами</option>
+                    </select>
+                </div>
+
+                <div class="modal-form-group">
+                    <label>🚀 Куда экспортировать данные:</label>
+                    <select @bind="_exportTarget">
+                        <option value="download">Скачать готовым файлом в браузер</option>
+                        <option value="clipboard">Скопировать текст в буфер обмена</option>
+                    </select>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_exportAlertMessage))
+                {
+                    <div class="modal-alert-box">
+                        @_exportAlertMessage
                     </div>
+                }
+            </main>
 
-                    <div>
-                        <label class="form-label small fw-semibold text-secondary mb-1">🔍 Что именно выгрузить:</label>
-                        <select @bind="_exportScope" class="form-select form-select-sm">
-                            <option value="all">Всю карту целиком (Структура, узлы, связи)</option>
-                            <option value="nodes">Только этапы (Названия, прогресс и описание)</option>
-                            <option value="edges">Только связи между этапами</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="form-label small fw-semibold text-secondary mb-1">🚀 Куда экспортировать данные:</label>
-                        <select @bind="_exportTarget" class="form-select form-select-sm">
-                            <option value="download">Скачать готовым файлом в браузер</option>
-                            <option value="clipboard">Скопировать текст в буфер обмена</option>
-                        </select>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(_exportAlertMessage))
-                    {
-                        <div class="alert alert-info py-2 small m-0 mt-1 shadow-sm text-center">
-                            @_exportAlertMessage
-                        </div>
-                    }
-                </main>
-
-                <footer class="modal-footer bg-light py-2">
-                    <button class="btn btn-sm btn-secondary" @onclick="CloseExportModal">Отмена</button>
-                    <button class="btn btn-sm btn-primary px-3" @onclick="ExecuteCustomExport">Подтвердить экспорт</button>
-                </footer>
-            </div>
+            <footer class="jiroad-modal-footer">
+                <button class="ghost" @onclick="CloseExportModal">Отмена</button>
+                <button class="cta" @onclick="ExecuteCustomExport">Подтвердить экспорт</button>
+            </footer>
         </div>
     </div>
 }
