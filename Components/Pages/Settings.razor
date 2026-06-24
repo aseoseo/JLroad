@@ -7,53 +7,111 @@
 
 <PageTitle>Настройки | JIroad</PageTitle>
 
-<button type="button" @onclick="GoBack" class="ghost" style="display: inline-flex; align-items: center; gap: 8px; border: none; padding: 5px 10px; margin-bottom: 20px; cursor: pointer; color: #64748B;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-    </svg>
-    Назад
-</button>
+<div class="container-fluid px-2 px-md-4 my-4 text-start" style="max-width: 800px; font-family: system-ui, sans-serif;">
+    
+    <button type="button" @onclick="GoBack" class="btn btn-sm btn-link text-secondary text-decoration-none d-inline-flex align-items-center gap-2 p-0 mb-4" style="box-shadow: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+        </svg>
+        Назад
+    </button>
 
-<h1>Настройки</h1>
+    <h1 class="h3 text-dark fw-bold mb-4">Настройки</h1>
 
-<section class="panel">
-    <h2>Профиль</h2>
-    <form class="editor" @onsubmit="SaveProfile" @onsubmit:preventDefault="true">
-        <input placeholder="Имя" @bind="profile.UserName"/>
-        <input placeholder="Аватар URL" @bind="profile.AvatarUrl"/>
-        <input placeholder="Описание" @bind="profile.Bio"/>
-        <button type="submit">Сохранить профиль</button>
-    </form>
-</section>
+    <div class="d-flex flex-column gap-4">
+        
+        <section class="card p-4 border border-light-subtle rounded-4 shadow-sm bg-white">
+            <h2 class="h5 text-dark fw-bold border-bottom pb-2 mb-3">Профиль</h2>
+            <form @onsubmit="SaveProfile" @onsubmit:preventDefault="true">
+                <div class="row g-3" style="max-width: 500px;">
+                    <div class="col-12">
+                        <input type="text" class="form-control text-sm" style="border-radius: 8px;" placeholder="Имя" @bind="profile.UserName" />
+                    </div>
+                    <div class="col-12">
+                        <input type="text" class="form-control text-sm" style="border-radius: 8px;" placeholder="Аватар URL" @bind="profile.AvatarUrl" />
+                    </div>
+                    <div class="col-12">
+                        <input type="text" class="form-control text-sm" style="border-radius: 8px;" placeholder="Описание" @bind="profile.Bio" />
+                    </div>
+                    <div class="col-12 pt-1">
+                        <button type="submit" class="btn btn-primary text-white fw-bold px-4 rounded-3 text-sm">Сохранить профиль</button>
+                    </div>
+                </div>
+            </form>
+        </section>
 
-<section class="panel">
-    <h2>Интерфейс</h2>
-    <form class="editor" @onsubmit="SaveProfile" @onsubmit:preventDefault="true">
-        <select @bind="language"><option>RU</option><option>EN</option></select>
-        <select @bind="theme"><option>Light</option><option>Dark</option></select>
-        <input type="range" min="90" max="120" value="100"/>
-        <button type="submit">Сохранить интерфейс</button>
-    </form>
-</section>
+        <section class="card p-4 border border-light-subtle rounded-4 shadow-sm bg-white">
+            <h2 class="h5 text-dark fw-bold border-bottom pb-2 mb-3">Интерфейс</h2>
+            <form @onsubmit="SaveProfile" @onsubmit:preventDefault="true">
+                <div class="row g-3" style="max-width: 500px;">
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Язык системы</label>
+                        <select class="form-select text-sm" style="border-radius: 8px;" @bind="language"><option>RU</option><option>EN</option></select>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Цветовая тема</label>
+                        <select class="form-select text-sm" style="border-radius: 8px;" @bind="theme"><option>Light</option><option>Dark</option></select>
+                    </div>
+                    <div class="col-12 my-2">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Масштаб рабочей области</label>
+                        <input type="range" class="form-range" min="90" max="120" value="100" />
+                    </div>
+                    <div class="col-12 pt-1">
+                        <button type="submit" class="btn btn-primary text-white fw-bold px-4 rounded-3 text-sm">Сохранить интерфейс</button>
+                    </div>
+                </div>
+            </form>
+        </section>
 
-<section class="panel">
-    <h2>Безопасность и интеграции</h2>
-    <form class="editor" @onsubmit="ChangePassword" @onsubmit:preventDefault="true">
-        <input type="password" placeholder="Текущий пароль" @bind="currentPassword"/>
-        <input type="password" placeholder="Новый пароль" @bind="newPassword"/>
-        <button type="submit">Сменить пароль</button>
-    </form>
-    <label><input type="checkbox"/> Двухфакторная авторизация</label>
-    <label><input type="checkbox"/> Google Drive</label>
-    <label><input type="checkbox"/> GitHub</label>
-    <label><input type="checkbox"/> Notion</label>
-    <label><input type="checkbox"/> Discord</label>
-</section>
+        <section class="card p-4 border border-light-subtle rounded-4 shadow-sm bg-white">
+            <h2 class="h5 text-dark fw-bold border-bottom pb-2 mb-3">Безопасность и интеграции</h2>
+            <form @onsubmit="ChangePassword" @onsubmit:preventDefault="true" class="mb-4">
+                <div class="row g-3" style="max-width: 500px;">
+                    <div class="col-12 col-sm-6">
+                        <input type="password" class="form-control text-sm" style="border-radius: 8px;" placeholder="Текущий пароль" @bind="currentPassword" />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <input type="password" class="form-control text-sm" style="border-radius: 8px;" placeholder="Новый пароль" @bind="newPassword" />
+                    </div>
+                    <div class="col-12 pt-1">
+                        <button type="submit" class="btn btn-outline-primary fw-bold px-4 rounded-3 text-sm">Сменить пароль</button>
+                    </div>
+                </div>
+            </form>
+            
+            <div class="d-flex flex-column gap-2 border-top pt-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="2faSwitch" style="cursor: pointer;" />
+                    <label class="form-check-label text-dark small fw-medium ms-2" for="2faSwitch" style="cursor: pointer;">Двухфакторная авторизация</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="driveSwitch" style="cursor: pointer;" />
+                    <label class="form-check-label text-dark small fw-medium ms-2" for="driveSwitch" style="cursor: pointer;">Google Drive</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="githubSwitch" style="cursor: pointer;" />
+                    <label class="form-check-label text-dark small fw-medium ms-2" for="githubSwitch" style="cursor: pointer;">GitHub</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="notionSwitch" style="cursor: pointer;" />
+                    <label class="form-check-label text-dark small fw-medium ms-2" for="notionSwitch" style="cursor: pointer;">Notion</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="discordSwitch" style="cursor: pointer;" />
+                    <label class="form-check-label text-dark small fw-medium ms-2" for="discordSwitch" style="cursor: pointer;">Discord</label>
+                </div>
+            </div>
+        </section>
+        
+    </div>
 
-@if (!string.IsNullOrWhiteSpace(message))
-{
-    <p class="fine">@message</p>
-}
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <div class="alert alert-info py-2 px-3 small border-0 fw-medium mt-3">
+            @message
+        </div>
+    }
+</div>
 
 @code {
     private ProfileDto profile = new();

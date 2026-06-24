@@ -1,25 +1,29 @@
 ﻿@inject IJSRuntime Js
 @inject NavigationManager Nav
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
+<div class="top-row ps-3 navbar navbar-dark d-flex align-items-center justify-content-between">
+    <div class="container-fluid d-flex justify-content-between align-items-center w-100">
         <a class="navbar-brand" href="">JIroad</a>
         
-        @if (isLoggedIn)
-        {
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" 
-                 style="width: 32px; height: 32px; font-size: 14px; border: 2px solid #fff;"
-                 title="Профиль активен">
-                U
-            </div>
-        }
+        <div class="d-flex align-items-center gap-2">
+            @if (isLoggedIn)
+            {
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-2" 
+                     style="width: 32px; height: 32px; font-size: 14px; border: 2px solid #fff;"
+                     title="Профиль активен">
+                    U
+                </div>
+            }
+            
+            <button title="Navigation menu" class="navbar-toggler d-md-none collapsed" data-bs-toggle="collapse" data-bs-target="#navNavbarCollapse" aria-controls="navNavbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
+<div class="collapse navbar-collapse d-md-block nav-scrollable" id="navNavbarCollapse" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column w-100">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home

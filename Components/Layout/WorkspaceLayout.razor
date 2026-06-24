@@ -6,9 +6,24 @@
 @inject IJSRuntime Js
 @inject NavigationManager Nav
 
+<div class="mobile-top-bar d-lg-none">
+    <div class="sidebar-brand m-0" @onclick='() => Nav.NavigateTo("/")'>
+        <span class="brand-logo">🛣️</span>
+        <span class="brand-text">JIroad</span>
+    </div>
+    <button type="button" class="mobile-toggle-btn" onclick="document.querySelector('.workspace-sidebar').classList.toggle('show')">
+        ☰
+    </button>
+</div>
+
 <div class="workspace-shell">
     <aside class="workspace-sidebar">
-        <div class="sidebar-brand" @onclick='() => Nav.NavigateTo("/")'>
+        <div class="d-flex justify-content-between align-items-center d-lg-none mb-3">
+            <span class="text-muted small">Навигация</span>
+            <button type="button" class="btn-close btn-close-white" onclick="document.querySelector('.workspace-sidebar').classList.remove('show')"></button>
+        </div>
+
+        <div class="sidebar-brand d-none d-lg-flex" @onclick='() => Nav.NavigateTo("/")'>
             <span class="brand-logo">🛣️</span>
             <span class="brand-text">JIroad</span>
         </div>
@@ -25,7 +40,7 @@
                 </div>
             </div>
 
-            <nav class="sidebar-menu">
+            <nav class="sidebar-menu" onclick="document.querySelector('.workspace-sidebar').classList.remove('show')">
                 <a class="menu-item" href="/profile">👤 Мой профиль</a>
                 <a class="menu-item" href="/library">📚 Библиотека шаблонов</a>
                 <a class="menu-item" href="/search">🔍 Поиск карт</a>
@@ -75,6 +90,28 @@
 </div>
 
 <style>
+    /* Мобильная верхняя плашка */
+    .mobile-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #0a1730;
+        padding: 0.75rem 1rem;
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .mobile-toggle-btn {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0 0.5rem;
+    }
+
     .workspace-shell {
         display: grid;
         grid-template-columns: 280px 1fr;
@@ -92,6 +129,8 @@
         top: 0;
         height: 100vh;
         box-sizing: border-box;
+        transition: transform 0.3s ease;
+        z-index: 1040;
     }
     .sidebar-brand {
         display: flex;
@@ -131,6 +170,7 @@
         flex-direction: column;
         gap: 0.35rem;
         flex: 1;
+        overflow-y: auto;
     }
     .menu-divider {
         font-size: 0.7rem;
@@ -185,6 +225,29 @@
     .workspace-page-container {
         max-width: 1200px;
         margin: 0 auto;
+    }
+
+    /* ИСПРАВЛЕНО: Добавлен символ перед media */
+    @@media (max-width: 991.98px) {
+        .workspace-shell {
+            grid-template-columns: 1fr;
+        }
+        .workspace-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translateX(-100%);
+            width: 280px;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+        }
+        .workspace-sidebar.show {
+            transform: translateX(0);
+        }
+        .workspace-main-content {
+            height: auto;
+            padding: 1rem;
+        }
     }
 </style>
 

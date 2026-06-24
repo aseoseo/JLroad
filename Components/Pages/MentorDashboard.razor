@@ -8,366 +8,147 @@
 
 <PageTitle>Панель Преподавателя | JIroad</PageTitle>
 
-<div style="padding: 2rem; max-width: 1400px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
+<div class="container-fluid px-2 px-md-4 my-4" style="max-width: 1400px; font-family: system-ui, -apple-system, sans-serif;">
     
-    <header style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+    <header class="p-4 mb-4 bg-white border rounded-4 shadow-sm d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
         <div>
-            <h1 style="margin: 0; color: #0f172a; font-size: 1.8rem; font-weight: 700;">👨‍🏫 Панель Мониторинга и Групп</h1>
-            <p style="margin: 0.35rem 0 0 0; color: #64748b; font-size: 0.95rem;">Управляйте группами, создавайте общие курсы и отслеживайте выполнение персональных заданий.</p>
+            <h1 class="m-0 text-dark fw-bold fs-3">👨‍🏫 Панель Мониторинга и Групп</h1>
+            <p class="m-0 text-muted mt-2 small">Управляйте группами, создавайте общие курсы и отслеживайте выполнение персональных заданий.</p>
         </div>
         
-        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-            <button class="btn" style="background: #fdf2f8; color: #9d174d; border: 1px solid #fce7f3; font-weight: 600; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; font-size: 0.9rem;" @onclick='() => Nav.NavigateTo("/help")'>
+        <div class="d-flex flex-wrap align-items-center gap-2 justify-content-start justify-content-xl-end">
+            <button class="btn btn-sm btn-outline-danger fw-semibold px-3 py-2 rounded-3 style-help-btn" style="background-color: #fdf2f8 !important; color: #9d174d !important; border-color: #fce7f3 !important;" @onclick='() => Nav.NavigateTo("/help")'>
                 📖 База знаний (Справка)
             </button>
 
-            <div style="display: flex; gap: 0.5rem; background: #f8fafc; padding: 0.5rem; border-radius: 12px; border: 1px solid #cbd5e1; width: 320px;">
-                <input type="email" @bind="studentEmailInput" placeholder="Email ученика для привязки..." style="padding: 0.5rem; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1; font-size: 0.9rem;" />
-                <button type="button" class="btn text-white" style="background: #2563eb; border: none; font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;" @onclick="AddStudent">
+            <div class="d-flex gap-2 p-2 bg-light border border-secondary-subtle rounded-3 w-100 w-sm-auto" style="max-width: 360px;">
+                <input type="email" @bind="studentEmailInput" placeholder="Email ученика для привязки..." class="form-control form-control-sm text-sm" />
+                <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3 border-0" @onclick="AddStudent">
                     Привязать
                 </button>
             </div>
         </div>
     </header>
 
-    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
-        <button type="button" style="padding: 0.5rem 1.5rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: @(activeTab == "students" ? "#2563eb" : "#f1f5f9"); color: @(activeTab == "students" ? "#ffffff" : "#475569");" @onclick='() => activeTab = "students"'>
+    <div class="d-flex gap-2 mb-4 border-bottom pb-2">
+        <button type="button" class="btn fw-bold px-3 py-2 rounded-3 text-sm @(activeTab == "students" ? "btn-primary text-white border-0 shadow" : "btn-light border text-secondary")" @onclick='() => activeTab = "students"'>
             👥 По ученикам (Индивидуально)
         </button>
-        <button type="button" style="padding: 0.5rem 1.5rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: @(activeTab == "groups" ? "#2563eb" : "#f1f5f9"); color: @(activeTab == "groups" ? "#ffffff" : "#475569");" @onclick='async () => { activeTab = "groups"; await LoadMentorMasterRoadmaps(); }'>
+        <button type="button" class="btn fw-bold px-3 py-2 rounded-3 text-sm @(activeTab == "groups" ? "btn-primary text-white border-0 shadow" : "btn-light border text-secondary")" @onclick='async () => { activeTab = "groups"; await LoadMentorMasterRoadmaps(); }'>
             📊 Групповой трекинг (По картам)
         </button>
     </div>
 
     @if (activeTab == "students")
     {
-        <div style="grid-template-columns: 350px 1fr; gap: 2rem; display: grid;">
-            <aside style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; height: fit-content;">
-                <h3 style="margin-top: 0; margin-bottom: 1rem; color: #0f172a; font-size: 1.1rem;">👥 Ваши учащиеся (@students.Count)</h3>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    @foreach (var s in students)
-                    {
-                        <div style="padding: 0.75rem; border: 1px solid @(selectedStudentId == s.Id ? "#2563eb" : "#e2e8f0"); background: @(selectedStudentId == s.Id ? "#eff6ff" : "#ffffff"); border-radius: 10px; cursor: pointer;" @onclick="() => SelectStudent(s.Id, s.UserName)">
-                            <div style="font-weight: 600; color: #0f172a;">@s.UserName</div>
-                            <div style="font-size: 0.8rem; color: #64748b;">@s.Email</div>
-                        </div>
-                    }
-                </div>
-            </aside>
-
-            <main style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
-                @if (selectedStudentId == 0)
-                {
-                    <p style="color: #94a3b8; text-align: center; padding: 3rem 0;">Выберите учащегося слева для управления его треками.</p>
-                }
-                else
-                {
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="margin: 0;">Учебные планы: @selectedStudentName</h3>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button type="button" class="btn" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px;" @onclick="() => { showManualForm = !showManualForm; showAiForm = false; }">➕ Назначить вручную</button>
-                            <button type="button" class="btn" style="background: #faf5ff; border: 1px solid #e9d5ff; color: #6b21a8; font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px;" @onclick="() => { showAiForm = !showAiForm; showManualForm = false; }">🧠 Через ИИ</button>
-                        </div>
-                    </div>
-
-                    @if (showManualForm)
-                    {
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
-                            <input type="text" @bind="newTitle" placeholder="Название карты" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;" />
-                            <button type="button" class="btn text-white" style="background: #22c55e; border: none; padding: 0.5rem 1rem; border-radius: 6px;" @onclick="CreateManualRoadmapForStudent">Сохранить</button>
-                        </div>
-                    }
-
-                    @if (showAiForm)
-                    {
-                        <div style="background: #faf5ff; border: 1px solid #f3e8ff; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
-                            <input type="text" @bind="aiGoal" placeholder="Чему должен обучиться студент?" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;" />
-                            <button type="button" class="btn text-white" style="background: #a855f7; border: none; padding: 0.5rem 1rem; border-radius: 6px;" @onclick="GenerateAiRoadmapForStudent">Сгенерировать</button>
-                        </div>
-                    }
-
-                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                        @foreach (var rm in studentRoadmaps)
+        <div class="row g-4">
+            <aside class="col-12 col-lg-4 col-xl-3">
+                <div class="card p-4 bg-white border border-light-subtle rounded-3 shadow-sm h-100">
+                    <h3 class="h6 text-dark fw-bold mb-3">👥 Ваши учащиеся (@students.Count)</h3>
+                    <div class="d-flex flex-column gap-2 overflow-y-auto" style="max-height: 500px;">
+                        @foreach (var s in students)
                         {
-                            <div style="padding: 1.25rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                                    <div>
-                                        <h4 style="margin: 0; font-size: 1.15rem; color: #0f172a;">@rm.Title</h4>
-                                        <span style="font-size: 0.85rem; font-weight: bold; color: #2563eb;">Прогресс: @rm.Progress%</span>
-                                    </div>
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <button type="button" class="btn text-white" style="background: #a855f7; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;" @onclick="() => PrepareTaskModalIndividual(selectedStudentId, rm.Id)">➕ Выдать лично</button>
-                                        <button type="button" class="btn text-white" style="background: #2563eb; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;" @onclick='() => Nav.NavigateTo($"/canvas/{rm.Id}")'>Открыть холст</button>
-                                    </div>
-                                </div>
-
-                                <div style="background: #ffffff; border: 1px solid #f3e8ff; border-radius: 8px; padding: 0.75rem; margin-top: 0.75rem;">
-                                    <div style="font-size: 0.8rem; font-weight: bold; color: #6b21a8; margin-bottom: 0.5rem; border-bottom: 1px solid #f3e8ff; padding-bottom: 0.25rem;">
-                                        📌 Задания и решения по данной карте:
-                                    </div>
-                                    @if (studentTasksCache.TryGetValue(rm.Id, out var tasks) && tasks.Any())
-                                    {
-                                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                            @foreach (var t in tasks)
-                                            {
-                                                <div style="font-size: 0.8rem; background: #fef8ff; padding: 0.6rem; border-radius: 6px; border: 1px solid #f3e8ff; display: flex; flex-direction: column; gap: 0.25rem;">
-                                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                        <span><b>@t.Title</b> (@(t.TaskType == "Video" ? "🎬 Видео" : t.TaskType == "Link" ? "🔗 Ссылка" : "📝 Текст")) @(t.IsGroupTask ? "👥 [Группа]" : "👤 [Личное]")</span>
-                                                        @if (t.Status == "Assigned") { <span style="color: #6b21a8; font-weight: bold;">[Выдано]</span> }
-                                                        else if (t.Status == "Submitted") { <span style="color: #ea580c; font-weight: bold;">[На проверке ⏳]</span> }
-                                                        else if (t.Status == "Approved") { <span style="color: #16a34a; font-weight: bold;">[Принято ✅]</span> }
-                                                        else if (t.Status == "Rejected") { <span style="color: #dc2626; font-weight: bold;">[На доработке ❌]</span> }
-                                                    </div>
-
-                                                    @if (!string.IsNullOrWhiteSpace(t.Content))
-                                                    {
-                                                        <div style="color: #64748b; font-size: 0.75rem; background: #f8fafc; padding: 0.25rem; border-radius: 4px;">Условие: @t.Content</div>
-                                                    }
-
-                                                    @if (!string.IsNullOrWhiteSpace(t.StudentResponse))
-                                                    {
-                                                        <div style="margin-top: 0.25rem; padding: 0.4rem; background: #fff; border: 1px dashed #cbd5e1; border-radius: 4px; color: #0f172a;">
-                                                            <b>Ответ учащегося:</b> <br/>
-                                                            @if (t.StudentResponse.StartsWith("http")) { <a href="@t.StudentResponse" target="_blank" style="color: #2563eb; text-decoration: underline;">@t.StudentResponse</a> }
-                                                            else { <span>@t.StudentResponse</span> }
-                                                        </div>
-                                                    }
-
-                                                    @if (t.Status == "Submitted")
-                                                    {
-                                                        <div style="margin-top: 0.4rem; display: flex; gap: 0.4rem; background: #fff; padding: 0.4rem; border-radius: 4px;">
-                                                            <input type="text" placeholder="Комментарий / замечание..." @bind="mentorCommentsInput[t.Id]" style="flex: 1; padding: 0.25rem; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px;" />
-                                                            <button type="button" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Rejected", t.IsGroupTask)'>Вернуть</button>
-                                                            <button type="button" style="background: #16a34a; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Approved", t.IsGroupTask)'>Принять</button>
-                                                        </div>
-                                                    }
-                                                    else if (!string.IsNullOrWhiteSpace(t.MentorComment))
-                                                    {
-                                                        <div style="color: #a21caf; font-size: 0.75rem; font-style: italic;">💬 Ваш фидбек: @t.MentorComment</div>
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <span style="font-size: 0.75rem; color: #a4b3c6; font-style: italic;">Заданий пока нет.</span>
-                                    }
-                                </div>
+                            <div class="p-3 border rounded-3 text-start shadow-sm" style="cursor: pointer; transition: background 0.2s, border-color 0.2s; border-color: @(selectedStudentId == s.Id ? "#2563eb" : "#e2e8f0") !important; background-color: @(selectedStudentId == s.Id ? "#eff6ff" : "#ffffff");" @onclick="() => SelectStudent(s.Id, s.UserName)">
+                                <div class="fw-bold text-dark small text-truncate">@s.UserName</div>
+                                <div class="text-muted small text-truncate" style="font-size: 0.8rem;">@s.Email</div>
                             </div>
                         }
                     </div>
-
-                    @if (showTaskForm)
-                    {
-                        <div style="margin-top: 2rem; padding: 1.5rem; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <h4 style="margin: 0; color: #6b21a8;">🎯 Назначить индивидуальную работу</h4>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Тип контента:</label>
-                                    <select @bind="taskType" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;">
-                                        <option value="Video">🎬 Видео-разбор (Ссылка)</option>
-                                        <option value="Link">🔗 Ссылка на проект (GitHub/Figma)</option>
-                                        <option value="Text">📝 Текстовая задача</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Название задания:</label>
-                                    <input type="text" @bind="taskTitle" placeholder="Например: Лабораторная №1" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Содержимое задания (Текст или URL):</label>
-                                <textarea @bind="taskContent" placeholder="Вставьте ссылку на материал или распишите требования..." style="width:100%; height:70px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;"></textarea>
-                            </div>
-
-                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
-                                <button type="button" style="padding: 0.4rem 1rem; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;" @onclick="() => showTaskForm = false">Отмена</button>
-                                <button type="button" style="padding: 0.4rem 1.2rem; background: #a855f7; color: white; border: none; font-weight: bold; border-radius: 6px; cursor: pointer;" @onclick="SendPersonalTask">Отправить студенту</button>
-                            </div>
-                        </div>
-                    }
-                }
-            </main>
-        </div>
-    }
-    else if (activeTab == "groups")
-    {
-        <div style="grid-template-columns: 350px 1fr; gap: 2rem; display: grid;">
-            <aside style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; height: fit-content;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">📋 Общие курсы</h3>
-                    <div style="display: flex; gap: 0.25rem;">
-                        <button type="button" class="btn btn-sm text-white" style="background: #2563eb; border: none; font-weight: bold; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.8rem;" @onclick='() => Nav.NavigateTo($"/canvas/{selectedMasterRoadmapId}")' disabled="@(selectedMasterRoadmapId == 0)">
-                            ✏️ Холст курса
-                        </button>
-                        <button type="button" class="btn btn-sm" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-weight: bold; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.8rem;" @onclick="() => showCreateMasterForm = !showCreateMasterForm">
-                            @(showCreateMasterForm ? "Закрыть" : "＋ Создать")
-                        </button>
-                    </div>
-                </div>
-
-                @if (showCreateMasterForm)
-                {
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <strong style="font-size: 0.85rem; color: #166534;">Новый общий курс:</strong>
-                        <input type="text" @bind="masterTitle" placeholder="Название (например: С# с нуля)" style="padding: 0.4rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;" />
-                        <input type="text" @bind="masterDescription" placeholder="Краткое описание курса" style="padding: 0.4rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;" />
-                        <button type="button" style="background: #166534; color: white; border: none; padding: 0.4rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;" @onclick="CreateMasterRoadmap">
-                            Создать мастер-курс
-                        </button>
-                    </div>
-                }
-
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    @foreach (var rm in mentorMasterRoadmaps)
-                    {
-                        <div style="padding: 0.75rem; border: 1px solid @(selectedMasterRoadmapId == rm.Id ? "#2563eb" : "#e2e8f0"); background: @(selectedMasterRoadmapId == rm.Id ? "#f0fdf4" : "#ffffff"); border-radius: 10px; cursor: pointer;" @onclick="() => SelectMasterRoadmap(rm.Id)">
-                            <div style="font-weight: 600; color: #0f172a;">🎯 @rm.Title</div>
-                            <div style="font-size: 0.8rem; color: #64748b;">ID на сервере: #@rm.Id</div>
-                        </div>
-                    }
                 </div>
             </aside>
 
-            <main style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
-                @if (selectedMasterRoadmapId == 0)
-                {
-                    <div style="text-align: center; padding: 4rem 2rem; color: #94a3b8;">
-                        <h4>Выберите созданный общий курс слева, чтобы открыть ведомость успеваемости студентов</h4>
-                    </div>
-                }
-                else
-                {
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
-                        <h3 style="margin: 0; color: #0f172a;">📊 Студенты на курсе</h3>
-                        <button type="button" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: bold; font-size: 0.85rem; cursor: pointer;" @onclick="() => { showGroupTaskForm = !showGroupTaskForm; showTaskForm = false; }">
-                            📢 Выдать задание ВСЕЙ группе
-                        </button>
-                    </div>
-
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                        <span style="font-weight: bold; font-size: 0.9rem; color: #334155;">👥 Добавить студента в группу курса:</span>
-                        <select @bind="studentToEnrollId" style="padding: 0.4rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;">
-                            <option value="0">-- Выберите из списка --</option>
-                            @foreach (var s in students)
-                            {
-                                <option value="@s.Id">@s.UserName (@s.Email)</option>
-                            }
-                        </select>
-                        <button type="button" style="background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;" @onclick="EnrollStudentToGroup">
-                            Добавить в группу
-                        </button>
-                    </div>
-
-                    @if (showGroupTaskForm)
+            <main class="col-12 col-lg-8 col-xl-9">
+                <div class="card p-4 bg-white border border-light-subtle rounded-3 shadow-sm h-100 text-start">
+                    @if (selectedStudentId == 0)
                     {
-                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <h4 style="margin: 0; color: #1e40af;">📢 Создать задание для всех студентов курса</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Тип задания:</label>
-                                    <select @bind="groupTaskType" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;">
-                                        <option value="Video">🎬 Видео-разбор</option>
-                                        <option value="Link">🔗 Репозиторий / Ссылка</option>
-                                        <option value="Text">📝 Текстовое задание</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Название задания:</label>
-                                    <input type="text" @bind="groupTaskTitle" placeholder="Например: Лабораторная работа для группы" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;" />
-                                </div>
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Описание или ссылка на требования:</label>
-                                <textarea @bind="groupTaskContent" placeholder="Опишите требования к выполнению..." style="width:100%; height:70px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;"></textarea>
-                            </div>
-                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                                <button type="button" style="padding: 0.4rem 1rem; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px;" @onclick="() => showGroupTaskForm = false">Отмена</button>
-                                <button type="button" style="padding: 0.4rem 1.2rem; background: #2563eb; color: white; border: none; font-weight: bold; border-radius: 6px;" @onclick="SendGroupTask">Опубликовать</button>
-                            </div>
-                        </div>
-                    }
-
-                    @if (!groupProgressList.Any())
-                    {
-                        <p style="color: #94a3b8; font-style: italic;">В этой группе пока нет студентов. Добавьте участников с помощью панели выше.</p>
+                        <p class="text-muted text-center py-5 my-auto">Выберите учащегося слева для управления его треками.</p>
                     }
                     else
                     {
-                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                            @foreach (var participant in groupProgressList)
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4 pb-2 border-bottom">
+                            <h3 class="h5 m-0 fw-bold text-dark">Учебные планы: @selectedStudentName</h3>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-success fw-bold py-2 rounded-3" style="background-color: #f0fdf4; border-color: #bbf7d0; color: #166534;" @onclick="() => { showManualForm = !showManualForm; showAiForm = false; }">➕ Назначить вручную</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary fw-bold py-2 rounded-3" style="background-color: #faf5ff; border-color: #e9d5ff; color: #6b21a8;" @onclick="() => { showAiForm = !showAiForm; showManualForm = false; }">🧠 Через ИИ</button>
+                            </div>
+                        </div>
+
+                        @if (showManualForm)
+                        {
+                            <div class="p-3 bg-light border rounded-3 mb-4">
+                                <input type="text" @bind="newTitle" placeholder="Название карты" class="form-control form-control-sm mb-2" />
+                                <button type="button" class="btn btn-sm btn-success text-white px-3" @onclick="CreateManualRoadmapForStudent">Сохранить</button>
+                            </div>
+                        }
+
+                        @if (showAiForm)
+                        {
+                            <div class="p-3 border rounded-3 mb-4" style="background-color: #faf5ff; border-color: #f3e8ff;">
+                                <input type="text" @bind="aiGoal" placeholder="Чему должен обучиться студент?" class="form-control form-control-sm mb-2" />
+                                <button type="button" class="btn btn-sm btn-primary text-white px-3" style="background-color: #a855f7; border: none;" @onclick="GenerateAiRoadmapForStudent">Сгенерировать</button>
+                            </div>
+                        }
+
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var rm in studentRoadmaps)
                             {
-                                <div style="padding: 1.25rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div class="p-3 border border-light-subtle rounded-3 bg-light shadow-sm">
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
                                         <div>
-                                            <strong style="font-size: 1.05rem; color: #0f172a;">👤 @participant.StudentName</strong>
-                                            <span style="font-size: 0.85rem; color: #64748b; margin-left: 1rem;">@participant.StudentEmail</span>
+                                            <h4 class="h6 m-0 fw-bold text-dark">@rm.Title</h4>
+                                            <span class="small fw-bold text-primary" style="font-size: 0.85rem;">Progress: @rm.Progress%</span>
                                         </div>
-                                        
-                                        <div style="display: flex; gap: 0.4rem;">
-                                            <button type="button" style="background: #10b981; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer;" @onclick='() => Nav.NavigateTo($"/canvas/{participant.StudentRoadmapId}")'>
-                                                🗺️ Открыть холст
-                                            </button>
-                                            <button type="button" style="background: #a855f7; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer;" @onclick="() => PrepareTaskModalGroup(participant.StudentId, participant.StudentRoadmapId)">
-                                                ➕ Выдать лично
-                                            </button>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3 py-1.5" style="background-color: #a855f7; border: none;" @onclick="() => PrepareTaskModalIndividual(selectedStudentId, rm.Id)">➕ Выдать лично</button>
+                                            <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3 py-1.5" @onclick='() => Nav.NavigateTo($"/canvas/{rm.Id}")'>Открыть холст</button>
                                         </div>
                                     </div>
 
-                                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                                        <div style="flex: 1; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
-                                            <div style="width: @participant.Progress%; background: #10b981; height: 100%;"></div>
+                                    <div class="bg-white border rounded-3 p-3 mt-2" style="border-color: #f3e8ff !important;">
+                                        <div class="small fw-bold text-purple border-bottom pb-1 mb-2" style="color: #6b21a8;">
+                                            📌 Задания и решения по данной карте:
                                         </div>
-                                        <span style="font-size: 0.85rem; font-weight: bold;">@participant.Progress%</span>
-                                    </div>
-
-                                    <div style="background: #ffffff; border: 1px solid #f3e8ff; border-radius: 8px; padding: 0.75rem;">
-                                        <div style="font-size: 0.8rem; font-weight: bold; color: #6b21a8; margin-bottom: 0.5rem; border-bottom: 1px solid #f3e8ff; padding-bottom: 0.25rem;">
-                                            📌 Назначенные задания и решения:
-                                        </div>
-
-                                        @if (studentTasksCache.TryGetValue(participant.StudentRoadmapId, out var tasks) && tasks.Any())
+                                        @if (studentTasksCache.TryGetValue(rm.Id, out var tasks) && tasks.Any())
                                         {
-                                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                            <div class="d-flex flex-column gap-2">
                                                 @foreach (var t in tasks)
                                                 {
-                                                    <div style="font-size: 0.8rem; background: #fef8ff; padding: 0.6rem; border-radius: 6px; border: 1px solid #f3e8ff; display: flex; flex-direction: column; gap: 0.25rem;">
-                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                            <span><b>@t.Title</b> (@(t.TaskType == "Video" ? "🎬 Видео" : t.TaskType == "Link" ? "🔗 Ссылка" : "📝 Текст")) @(t.IsGroupTask ? "👥 [Группа]" : "👤 [Личное]")</span>
-                                                            @if (t.Status == "Assigned") { <span style="color: #6b21a8; font-weight: bold;">[Выдано]</span> }
-                                                            else if (t.Status == "Submitted") { <span style="color: #ea580c; font-weight: bold;">[На проверке ⏳]</span> }
-                                                            else if (t.Status == "Approved") { <span style="color: #16a34a; font-weight: bold;">[Принято ✅]</span> }
-                                                            else if (t.Status == "Rejected") { <span style="color: #dc2626; font-weight: bold;">[На доработке ❌]</span> }
+                                                    <div class="p-3 border rounded-3 small d-flex flex-column gap-2" style="background-color: #fef8ff; border-color: #f3e8ff !important;">
+                                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                            <span class="fw-medium text-dark"><b>@t.Title</b> (@(t.TaskType == "Video" ? "🎬 Видео" : t.TaskType == "Link" ? "🔗 Ссылка" : "📝 Текст")) @(t.IsGroupTask ? "👥 [Группа]" : "👤 [Личное]")</span>
+                                                            @if (t.Status == "Assigned") { <span class="badge bg-purple text-white p-1" style="background-color: #6b21a8;">Выдано</span> }
+                                                            else if (t.Status == "Submitted") { <span class="badge bg-warning text-dark p-1">На проверке ⏳</span> }
+                                                            else if (t.Status == "Approved") { <span class="badge bg-success text-white p-1">Принято ✅</span> }
+                                                            else if (t.Status == "Rejected") { <span class="badge bg-danger text-white p-1">На доработку ❌</span> }
                                                         </div>
 
                                                         @if (!string.IsNullOrWhiteSpace(t.Content))
                                                         {
-                                                            <div style="color: #64748b; font-size: 0.75rem; background: #f8fafc; padding: 0.25rem; border-radius: 4px;">Условие: @t.Content</div>
+                                                            <div class="text-secondary p-2 bg-light rounded" style="font-size: 0.75rem;">Условие: @t.Content</div>
                                                         }
 
                                                         @if (!string.IsNullOrWhiteSpace(t.StudentResponse))
                                                         {
-                                                            <div style="margin-top: 0.25rem; padding: 0.4rem; background: #fff; border: 1px dashed #cbd5e1; border-radius: 4px; color: #0f172a;">
+                                                            <div class="p-2 bg-white border border-secondary-subtle border-dashed rounded text-dark text-break small">
                                                                 <b>Ответ учащегося:</b> <br/>
-                                                                @if (t.StudentResponse.StartsWith("http")) { <a href="@t.StudentResponse" target="_blank" style="color: #2563eb; text-decoration: underline;">@t.StudentResponse</a> }
+                                                                @if (t.StudentResponse.StartsWith("http")) { <a href="@t.StudentResponse" target="_blank" class="text-primary text-decoration-underline">@t.StudentResponse</a> }
                                                                 else { <span>@t.StudentResponse</span> }
                                                             </div>
                                                         }
 
                                                         @if (t.Status == "Submitted")
                                                         {
-                                                            <div style="margin-top: 0.4rem; display: flex; gap: 0.4rem; background: #fff; padding: 0.4rem; border-radius: 4px;">
-                                                                <input type="text" placeholder="Комментарий / замечание..." @bind="mentorCommentsInput[t.Id]" style="flex: 1; padding: 0.25rem; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px;" />
-                                                                <button type="button" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Rejected", t.IsGroupTask)'>Вернуть</button>
-                                                                <button type="button" style="background: #16a34a; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" @onclick='() => ReviewTask(t.Id, "Approved", t.IsGroupTask)'>Принять</button>
+                                                            <div class="mt-1 d-flex flex-column flex-sm-row gap-2 bg-white p-2 border rounded">
+                                                                <input type="text" placeholder="Комментарий / замечание..." @bind="mentorCommentsInput[t.Id]" class="form-control form-control-sm text-xs" style="font-size: 0.75rem;" />
+                                                                <div class="d-flex gap-2">
+                                                                    <button type="button" class="btn btn-sm btn-danger text-white px-3" @onclick='() => ReviewTask(t.Id, "Rejected", t.IsGroupTask)'>Вернуть</button>
+                                                                    <button type="button" class="btn btn-sm btn-success text-white px-3" @onclick='() => ReviewTask(t.Id, "Approved", t.IsGroupTask)'>Принять</button>
+                                                                </div>
                                                             </div>
                                                         }
                                                         else if (!string.IsNullOrWhiteSpace(t.MentorComment))
                                                         {
-                                                            <div style="color: #a21caf; font-size: 0.75rem; font-style: italic;">💬 Ваш фидбек: @t.MentorComment</div>
+                                                            <div class="text-secondary small fst-italic" style="color: #a21caf !important;">💬 Ваш фидбек: @t.MentorComment</div>
                                                         }
                                                     </div>
                                                 }
@@ -375,46 +156,277 @@
                                         }
                                         else
                                         {
-                                            <span style="font-size: 0.75rem; color: #a4b3c6; font-style: italic;">Заданий пока нет.</span>
+                                            <span class="text-muted small fst-italic">Заданий пока нет.</span>
                                         }
                                     </div>
                                 </div>
                             }
                         </div>
+
+                        @if (showTaskForm)
+                        {
+                            <div class="mt-4 p-3 border rounded-3 d-flex flex-column gap-2" style="background-color: #faf5ff; border-color: #e9d5ff;">
+                                <h4 class="h6 text-purple fw-bold m-0" style="color: #6b21a8;">🎯 Назначить индивидуальную работу</h4>
+                                
+                                <div class="row g-2">
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label small fw-bold text-dark mb-1">Тип контента:</label>
+                                        <select @bind="taskType" class="form-select form-select-sm">
+                                            <option value="Video">🎬 Видео-разбор (Ссылка)</option>
+                                            <option value="Link">🔗 Ссылка на проект (GitHub/Figma)</option>
+                                            <option value="Text">📝 Текстовая задача</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label small fw-bold text-dark mb-1">Название задания:</label>
+                                        <input type="text" @bind="taskTitle" placeholder="Например: Лабораторная №1" class="form-control form-control-sm" />
+                                    </div>
+                                </div>
+
+                                <div class="mt-1">
+                                    <label class="form-label small fw-bold text-dark mb-1">Содержимое задания (Текст или URL):</label>
+                                    <textarea @bind="taskContent" placeholder="Вставьте ссылку на материал или распишите требования..." class="form-control form-control-sm" style="height: 70px;"></textarea>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 mt-2">
+                                    <button type="button" class="btn btn-sm btn-light border px-3" @onclick="() => showTaskForm = false">Отмена</button>
+                                    <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3" style="background-color: #a855f7; border: none;" @onclick="SendPersonalTask">Отправить студенту</button>
+                                </div>
+                            </div>
+                        }
                     }
+                </div>
+            </main>
+        </div>
+    }
+    else if (activeTab == "groups")
+    {
+        <div class="row g-4">
+            <aside class="col-12 col-lg-4 col-xl-3">
+                <div class="card p-4 bg-white border border-light-subtle rounded-3 shadow-sm h-100">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center border-bottom pb-2 mb-3 gap-2 text-start">
+                        <h3 class="h6 m-0 fw-bold text-dark">📋 Общие курсы</h3>
+                        <div class="d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-primary text-white px-2 py-1 small" @onclick='() => Nav.NavigateTo($"/canvas/{selectedMasterRoadmapId}")' disabled="@(selectedMasterRoadmapId == 0)">
+                                ✏️ Холст
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success text-white px-2 py-1 small" @onclick="() => showCreateMasterForm = !showCreateMasterForm">
+                                @(showCreateMasterForm ? "Закрыть" : "＋ Создать")
+                            </button>
+                        </div>
+                    </div>
 
-                    @if (showTaskForm)
+                    @if (showCreateMasterForm)
                     {
-                        <div style="margin-top: 2rem; padding: 1.5rem; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
-                            <h4 style="margin: 0; color: #6b21a8;">🎯 Назначить индивидуальную работу</h4>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Тип контента:</label>
-                                    <select @bind="taskType" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;">
-                                        <option value="Video">🎬 Видео-разбор (Ссылка)</option>
-                                        <option value="Link">🔗 Ссылка на проект (GitHub/Figma)</option>
-                                        <option value="Text">📝 Текстовая задача</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Название задания:</label>
-                                    <input type="text" @bind="taskTitle" placeholder="Например: Лабораторная №1" style="width:100%; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:0.25rem;">Содержимое задания (Текст или URL):</label>
-                                <textarea @bind="taskContent" placeholder="Вставьте ссылку на материал или распишите требования..." style="width:100%; height:70px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1;"></textarea>
-                            </div>
-
-                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
-                                <button type="button" style="padding: 0.4rem 1rem; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;" @onclick="() => showTaskForm = false">Отмена</button>
-                                <button type="button" style="padding: 0.4rem 1.2rem; background: #a855f7; color: white; border: none; font-weight: bold; border-radius: 6px; cursor: pointer;" @onclick="SendPersonalTask">Отправить студенту</button>
-                            </div>
+                        <div class="p-3 border rounded-3 mb-3 text-start" style="background-color: #f0fdf4; border-color: #bbf7d0;">
+                            <strong class="small text-success d-block mb-1">Новый общий курс:</strong>
+                            <input type="text" @bind="masterTitle" placeholder="Название (например: С# с нуля)" class="form-control form-control-sm mb-2" />
+                            <input type="text" @bind="masterDescription" placeholder="Краткое описание курса" class="form-control form-control-sm mb-2" />
+                            <button type="button" class="btn btn-sm btn-success text-white w-100 fw-bold" @onclick="CreateMasterRoadmap">
+                                Создать мастер-курс
+                            </button>
                         </div>
                     }
-                }
+
+                    <div class="d-flex flex-column gap-2 overflow-y-auto" style="max-height: 500px;">
+                        @foreach (var rm in mentorMasterRoadmaps)
+                        {
+                            <div class="p-3 border rounded-3 text-start shadow-sm" style="cursor: pointer; transition: background 0.2s, border-color 0.2s; border-color: @(selectedMasterRoadmapId == rm.Id ? "#2563eb" : "#e2e8f0") !important; background-color: @(selectedMasterRoadmapId == rm.Id ? "#f0fdf4" : "#ffffff");" @onclick="() => SelectMasterRoadmap(rm.Id)">
+                                <div class="fw-bold text-dark small text-truncate">🎯 @rm.Title</div>
+                                <div class="text-muted small" style="font-size: 0.8rem;">ID на сервере: #@rm.Id</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </aside>
+
+            <main class="col-12 col-lg-8 col-xl-9">
+                <div class="card p-4 bg-white border border-light-subtle rounded-3 shadow-sm h-100 text-start">
+                    @if (selectedMasterRoadmapId == 0)
+                    {
+                        <div class="text-center py-5 my-auto text-muted">
+                            <h4>Выберите созданный общий курс слева, чтобы открыть ведомость успеваемости студентов</h4>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4 pb-2 border-bottom">
+                            <h3 class="h5 m-0 fw-bold text-dark">📊 Студенты на курсе</h3>
+                            <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3 py-2" @onclick="() => { showGroupTaskForm = !showGroupTaskForm; showTaskForm = false; }">
+                                📢 Выдать задание ВСЕЙ группе
+                            </button>
+                        </div>
+
+                        <div class="p-3 bg-light border border-secondary-subtle rounded-3 mb-4 d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                            <span class="fw-bold small text-secondary">👥 Добавить студента в группу курса:</span>
+                            <select @bind="studentToEnrollId" class="form-select form-select-sm w-100 w-sm-auto" style="max-width: 250px;">
+                                <option value="0">-- Выберите из списка --</option>
+                                @foreach (var s in students)
+                                {
+                                    <option value="@s.Id">@s.UserName (@s.Email)</option>
+                                }
+                            </select>
+                            <button type="button" class="btn btn-sm btn-success text-white fw-bold px-3 py-1.5 ms-sm-auto" @onclick="EnrollStudentToGroup">
+                                Добавить в группу
+                            </button>
+                        </div>
+
+                        @if (showGroupTaskForm)
+                        {
+                            <div class="p-3 border rounded-3 mb-4 d-flex flex-column gap-2" style="background-color: #eff6ff; border-color: #bfdbfe;">
+                                <h4 class="h6 text-primary fw-bold m-0" style="color: #1e40af;">📢 Создать задание для всех студентов курса</h4>
+                                <div class="row g-2">
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label small fw-bold text-dark mb-1">Тип задания:</label>
+                                        <select @bind="groupTaskType" class="form-select form-select-sm">
+                                            <option value="Video">🎬 Видео-разбор</option>
+                                            <option value="Link">🔗 Репозиторий / Ссылка</option>
+                                            <option value="Text">📝 Текстовое задание</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label small fw-bold text-dark mb-1">Название задания:</label>
+                                        <input type="text" @bind="groupTaskTitle" placeholder="Например: Лабораторная работа для группы" class="form-control form-control-sm" />
+                                    </div>
+                                </div>
+                                <div class="mt-1">
+                                    <label class="form-label small fw-bold text-dark mb-1">Описание или ссылка на требования:</label>
+                                    <textarea @bind="groupTaskContent" placeholder="Опишите требования к выполнению..." class="form-control form-control-sm" style="height: 70px;"></textarea>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2 mt-2">
+                                    <button type="button" class="btn btn-sm btn-light border px-3" @onclick="() => showGroupTaskForm = false">Отмена</button>
+                                    <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3" @onclick="SendGroupTask">Опубликовать</button>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!groupProgressList.Any())
+                        {
+                            <p class="text-muted small fst-italic">В этой группе пока нет студентов. Добавьте участников с помощью панели выше.</p>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column gap-3">
+                                @foreach (var participant in groupProgressList)
+                                {
+                                    <div class="p-3 border border-light-subtle rounded-3 bg-light shadow-sm">
+                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-2">
+                                            <div>
+                                                <strong class="text-dark small">👤 @participant.StudentName</strong>
+                                                <span class="text-secondary small ms-sm-2" style="font-size: 0.8rem;">@participant.StudentEmail</span>
+                                            </div>
+                                            
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-success text-white fw-bold" @onclick='() => Nav.NavigateTo($"/canvas/{participant.StudentRoadmapId}")'>
+                                                    🗺️ Холст
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-primary text-white fw-bold" style="background-color: #a855f7; border: none;" @onclick="() => PrepareTaskModalGroup(participant.StudentId, participant.StudentRoadmapId)">
+                                                    ➕ Задание
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2 mb-3">
+                                            <div class="w-100 bg-secondary-subtle rounded" style="height: 8px; overflow: hidden; background-color: #e2e8f0;">
+                                                <div style="width: @participant.Progress%; background-color: #10b981; height: 100%;"></div>
+                                            </div>
+                                            <span class="small fw-bold text-dark text-nowrap">@participant.Progress%</span>
+                                        </div>
+
+                                        <div class="bg-white border rounded-3 p-3">
+                                            <div class="small fw-bold text-purple border-bottom pb-1 mb-2" style="color: #6b21a8;">
+                                                📌 Назначенные задания и решения:
+                                            </div>
+
+                                            @if (studentTasksCache.TryGetValue(participant.StudentRoadmapId, out var tasks) && tasks.Any())
+                                            {
+                                                <div class="d-flex flex-column gap-2">
+                                                    @foreach (var t in tasks)
+                                                    {
+                                                        <div class="p-3 border rounded-3 small d-flex flex-column gap-2" style="background-color: #fef8ff; border-color: #f3e8ff !important;">
+                                                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                                <span class="fw-medium text-dark"><b>@t.Title</b> (@(t.TaskType == "Video" ? "🎬 Видео" : t.TaskType == "Link" ? "🔗 Ссылка" : "📝 Текст")) @(t.IsGroupTask ? "👥 [Группа]" : "👤 [Личное]")</span>
+                                                                @if (t.Status == "Assigned") { <span class="badge bg-purple text-white p-1" style="background-color: #6b21a8;">Выдано</span> }
+                                                                else if (t.Status == "Submitted") { <span class="badge bg-warning text-dark p-1">На проверке ⏳</span> }
+                                                                else if (t.Status == "Approved") { <span class="badge bg-success text-white p-1">Принято ✅</span> }
+                                                                else if (t.Status == "Rejected") { <span class="badge bg-danger text-white p-1">На доработку ❌</span> }
+                                                            </div>
+
+                                                            @if (!string.IsNullOrWhiteSpace(t.Content))
+                                                            {
+                                                                <div class="text-secondary p-2 bg-light rounded" style="font-size: 0.75rem;">Условие: @t.Content</div>
+                                                            }
+
+                                                            @if (!string.IsNullOrWhiteSpace(t.StudentResponse))
+                                                            {
+                                                                <div class="p-2 bg-white border border-secondary-subtle border-dashed rounded text-dark text-break small">
+                                                                                                                                    <b>Ответ учащегося:</b> <br/>
+                                                                    @if (t.StudentResponse.StartsWith("http")) { <a href="@t.StudentResponse" target="_blank" class="text-primary text-decoration-underline">@t.StudentResponse</a> }
+                                                                    else { <span>@t.StudentResponse</span> }
+                                                                </div>
+                                                            }
+
+                                                            @if (t.Status == "Submitted")
+                                                            {
+                                                                <div class="mt-1 d-flex flex-column flex-sm-row gap-2 bg-white p-2 border rounded">
+                                                                    <input type="text" placeholder="Комментарий / замечание..." @bind="mentorCommentsInput[t.Id]" class="form-control form-control-sm text-xs" style="font-size: 0.75rem;" />
+                                                                    <div class="d-flex gap-2">
+                                                                        <button type="button" class="btn btn-sm btn-danger text-white px-3" @onclick='() => ReviewTask(t.Id, "Rejected", t.IsGroupTask)'>Вернуть</button>
+                                                                        <button type="button" class="btn btn-sm btn-success text-white px-3" @onclick='() => ReviewTask(t.Id, "Approved", t.IsGroupTask)'>Принять</button>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                            else if (!string.IsNullOrWhiteSpace(t.MentorComment))
+                                                            {
+                                                                <div class="text-secondary small fst-italic" style="color: #a21caf !important;">💬 Ваш фидбек: @t.MentorComment</div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small fst-italic">Заданий пока нет.</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (showTaskForm)
+                        {
+                            <div class="mt-4 p-3 border rounded-3 d-flex flex-column gap-2" style="background-color: #faf5ff; border-color: #e9d5ff;">
+                                <h4 class="h6 text-purple fw-bold m-0" style="color: #6b21a8;">🎯 Назначить индивидуальную работу</h4>
+                                
+                                <div class="row g-2">
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label small fw-bold text-dark mb-1">Тип контента:</label>
+                                        <select @bind="taskType" class="form-select form-select-sm">
+                                            <option value="Video">🎬 Видео-разбор (Ссылка)</option>
+                                            <option value="Link">🔗 Ссылка на проект (GitHub/Figma)</option>
+                                            <option value="Text">📝 Текстовая задача</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label small fw-bold text-dark mb-1">Название задания:</label>
+                                        <input type="text" @bind="taskTitle" placeholder="Например: Лабораторная №1" class="form-control form-control-sm" />
+                                    </div>
+                                </div>
+
+                                <div class="mt-1">
+                                    <label class="form-label small fw-bold text-dark mb-1">Содержимое задания (Текст или URL):</label>
+                                    <textarea @bind="taskContent" placeholder="Вставьте ссылку на материал или распишите требования..." class="form-control form-control-sm" style="height: 70px;"></textarea>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 mt-2">
+                                    <button type="button" class="btn btn-sm btn-light border px-3" @onclick="() => showTaskForm = false">Отмена</button>
+                                    <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3" style="background-color: #a855f7; border: none;" @onclick="SendPersonalTask">Отправить студенту</button>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
             </main>
         </div>
     }

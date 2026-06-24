@@ -6,39 +6,46 @@
 
 <PageTitle>Вход | JIroad</PageTitle>
 
-<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: system-ui, sans-serif; padding: 1.5rem;">
-    <div style="background: #ffffff; padding: 2.5rem; border-radius: 20px; border: 1px solid #e2e8f0; width: 100%; max-width: 440px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light px-3 py-4" style="background-color: #f8fafc !important;">
+    <div class="card w-100 p-4 p-sm-5 border border-light-subtle rounded-4 shadow" style="max-width: 440px; background-color: #ffffff;">
         
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <h1 style="margin: 0; font-size: 1.8rem; color: #0f172a; font-weight: 800;">Вход в JIroad</h1>
-            <p style="margin: 0.4rem 0 0 0; color: #64748b; font-size: 0.9rem;">С возвращением!<br/>Авторизуйтесь в рабочее пространство</p>
+        <div class="text-center mb-4">
+            <h1 class="m-0 text-dark fw-bold h3" style="font-weight: 800;">Вход в JIroad</h1>
+            <p class="m-0 text-secondary mt-2 small">С возвращением!<br/>Авторизуйтесь в рабочее пространство</p>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div style="padding: 0.75rem 1rem; background: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 500;">
+            <div class="alert alert-danger py-2 px-3 small border-0 fw-medium mb-3">
                 ❌ Неверный Email или пароль.
             </div>
         }
 
         <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-            <div style="margin-bottom: 1.25rem;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Email адрес</label>
-                <input type="email" @bind="loginModel.Email" required style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" placeholder="name@example.com" />
+            <div class="mb-3 text-start">
+                <label class="form-label small fw-semibold text-secondary mb-1">Email адрес</label>
+                <input type="email" @bind="loginModel.Email" required class="form-control form-control-lg text-sm" style="font-size: 0.95rem; border-radius: 8px;" placeholder="name@example.com" />
             </div>
 
-            <div style="margin-bottom: 1.75rem;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Пароль</label>
-                <input type="password" @bind="loginModel.Password" required style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" placeholder="••••••••" />
+            <div class="mb-4 text-start">
+                <label class="form-label small fw-semibold text-secondary mb-1">Пароль</label>
+                <input type="password" @bind="loginModel.Password" required class="form-control form-control-lg text-sm" style="font-size: 0.95rem; border-radius: 8px;" placeholder="••••••••" />
             </div>
 
-            <button type="submit" class="text-white" style="width: 100%; background: #2563eb; font-weight: 600; padding: 0.75rem; border-radius: 10px; border: none; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.15);" disabled="@isSubmitting">
-                @(isSubmitting ? "Проверка..." : "Войти в систему")
+            <button type="submit" class="btn btn-primary btn-lg text-white w-100 fw-bold border-0 py-2 rounded-3" style="font-size: 1rem; box-shadow: 0 4px 12px rgba(37,99,235,0.15) !important;" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <span>Проверка...</span>
+                }
+                else
+                {
+                    <span>Войти в систему</span>
+                }
             </button>
         </EditForm>
 
-        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #64748b;">
-            Новый пользователь? <a href="/auth/register" style="color: #2563eb; font-weight: 600; text-decoration: none;">Создать аккаунт</a>
+        <div class="text-center mt-4 small text-secondary">
+            Новый пользователь? <a href="/auth/register" class="text-primary fw-bold text-decoration-none">Создать аккаунт</a>
         </div>
     </div>
 </div>

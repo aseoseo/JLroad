@@ -9,19 +9,19 @@
 
 <PageTitle>Тесты и Проверка знаний | JIroad</PageTitle>
 
-<div class="container" style="padding: 2rem; max-width: 1200px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
+<div class="container-fluid px-2 px-md-4 my-4 text-start" style="max-width: 1200px; font-family: system-ui, -apple-system, sans-serif;">
     
-    <button class="btn" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; margin-bottom: 1.5rem;" @onclick="BackToCanvas">
+    <button class="btn btn-sm btn-light border border-secondary-subtle px-3 py-2 rounded-3 mb-4" @onclick="BackToCanvas">
         ← Вернуться назад
     </button>
 
-    <header style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <header class="p-4 mb-4 bg-white border rounded-4 shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div>
-            <h1 style="margin: 0; color: #0f172a; font-size: 1.7rem; font-weight: 700;">📝 Центр Тестирования по Roadmap #{RoadmapId}</h1>
-            <p style="margin: 0.35rem 0 0 0; color: #64748b; font-size: 0.95rem;">Создавайте проверочные тесты вручную, проходите задания или используйте нейросеть для генерации среза знаний</p>
+            <h1 class="m-0 text-dark fw-bold fs-4">📝 Центр Тестирования по Roadmap #{RoadmapId}</h1>
+            <p class="m-0 text-muted mt-2 small">Создавайте проверочные тесты вручную, проходите задания или используйте нейросеть для генерации среза знаний</p>
         </div>
-        <div>
-            <button class="btn text-white" style="background: #4f46e5; font-weight: 600; padding: 0.6rem 1.2rem; border-radius: 10px; border: none;" @onclick="GenerateTestViaAi" disabled="@isAiGenerating">
+        <div class="w-100 w-md-auto text-end">
+            <button class="btn btn-primary fw-semibold px-4 py-2.5 rounded-3 text-white border-0 shadow w-100 w-sm-auto" style="background-color: #4f46e5 !important;" @onclick="GenerateTestViaAi" disabled="@isAiGenerating">
                 @(isAiGenerating ? "⚡ Генерируем..." : "🤖 Сгенерировать через ИИ")
             </button>
         </div>
@@ -29,119 +29,123 @@
 
     @if (activeTest != null)
     {
-        <div style="background: #ffffff; padding: 2rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
-                <h2 style="margin: 0; color: #0f172a;">🎯 Прохождение: @activeTest.Title</h2>
-                <button class="btn" style="background: #fee2e2; color: #b91c1c; border: none; padding: 0.4rem 0.8rem; border-radius: 6px;" @onclick="CancelTesting">Прервать тест</button>
+        <div class="card p-4 p-sm-5 bg-white border border-light-subtle rounded-4 shadow-sm">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-4 gap-2">
+                <h2 class="h4 m-0 text-dark fw-bold">🎯 Прохождение: @activeTest.Title</h2>
+                <button class="btn btn-sm btn-outline-danger px-3 py-2 rounded-3" style="background-color: #fee2e2 !important; color: #b91c1c !important; border: none;" @onclick="CancelTesting">Прервать тест</button>
             </div>
 
             @if (!testFinished)
             {
                 @foreach (var q in activeTest.Questions)
                 {
-                    <div style="margin-bottom: 2rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                        <p style="font-weight: 600; color: #1e293b; margin-top: 0; margin-bottom: 1rem; font-size: 1.05rem;">❓ @q.QuestionText</p>
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div class="p-4 bg-light border border-light-subtle rounded-3 mb-4">
+                        <p class="fw-bold text-dark mb-3 fs-6">❓ @q.QuestionText</p>
+                        <div class="d-flex flex-column gap-2">
                             @foreach (var opt in q.Options)
                             {
-                                <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer;">
-                                    <input type="radio" name="question-@q.Id" @onclick="() => SelectAnswer(q.Id, opt.Id)" />
-                                    <span style="color: #334155;">@opt.OptionText</span>
+                                <label class="form-check-label border border-secondary-subtle rounded-3 p-3 bg-white d-flex align-items-center gap-3 w-100" style="cursor: pointer;">
+                                    <input type="radio" class="form-check-input m-0 flex-shrink-0" style="width: 1.15rem; height: 1.15rem;" name="question-@q.Id" @onclick="() => SelectAnswer(q.Id, opt.Id)" />
+                                    <span class="text-secondary small fw-medium">@opt.OptionText</span>
                                 </label>
                             }
                         </div>
                     </div>
                 }
 
-                <button class="btn text-white" style="background: #10b981; width: 100%; padding: 0.8rem; border-radius: 10px; font-weight: 700; border: none; font-size: 1.1rem;" @onclick="SubmitAnswers">
+                <button class="btn btn-success btn-lg text-white w-100 fw-bold py-3 rounded-3 border-0 mt-3" @onclick="SubmitAnswers">
                     🏁 Завершить тест и проверить результаты
                 </button>
             }
             else
             {
-                <div style="text-align: center; padding: 2rem 0;">
-                    <span style="font-size: 4rem;">🏆</span>
-                    <h2 style="color: #0f172a; margin-top: 1rem;">Тест успешно завершен!</h2>
-                    <p style="font-size: 1.5rem; font-weight: 800; color: #2563eb; margin: 0.5rem 0;">Ваш результат: @userScore из @totalQuestions</p>
-                    <p style="color: #64748b; margin-bottom: 1.5rem;">Попытка зафиксирована в общей аналитике профиля.</p>
-                    <button class="btn text-white" style="background: #4f46e5; padding: 0.6rem 1.5rem; border-radius: 8px; border: none;" @onclick="CancelTesting">Вернуться к списку тестов</button>
+                <div class="text-center py-4">
+                    <span class="display-1 d-block mb-2">🏆</span>
+                    <h2 class="h3 text-dark fw-bold mt-2">Тест успешно завершен!</h2>
+                    <p class="display-6 fw-extrabold text-primary my-3" style="font-weight: 800;">Ваш результат: @userScore из @totalQuestions</p>
+                    <p class="text-muted small mb-4">Попытка зафиксирована в общей аналитике профиля.</p>
+                    <button class="btn btn-primary fw-semibold px-4 py-2 rounded-3 text-white border-0 shadow" style="background-color: #4f46e5 !important;" @onclick="CancelTesting">Вернуться к списку тестов</button>
                 </div>
             }
         </div>
     }
     else
     {
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div class="row g-4">
             
-            <section style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
-                <h3 style="margin-top: 0; margin-bottom: 1.25rem; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">📋 Доступные проверочные тесты</h3>
-                
-                @if (testList == null || testList.Count == 0)
-                {
-                    <p style="color: #94a3b8; font-style: italic; text-align: center; padding: 3rem 0;">Для этой карты пока не создано ни одного теста.</p>
-                }
-                else
-                {
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        @foreach (var t in testList)
-                        {
-                            <div style="padding: 1rem; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                                <div>
-                                    <h4 style="margin: 0; color: #0f172a; font-weight: 600;">
-                                        @t.Title 
-                                        @if (t.IsAiGenerated) { <span style="background: #f3e8ff; color: #7c3aed; font-size: 0.7rem; padding: 0.2rem 0.4rem; border-radius: 4px; margin-left: 0.5rem;">🤖 ИИ</span> }
-                                    </h4>
-                                    <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.85rem;">@t.Description</p>
-                                        </div>
-                                <button class="btn text-white" style="background: #2563eb; border: none; padding: 0.4rem 1rem; border-radius: 6px; font-weight: 600;" @onclick="() => StartTest(t.Id)">Пройти</button>
-                            </div>
-                        }
-                    </div>
-                }
+            <section class="col-12 col-lg-6">
+                <div class="card p-4 bg-white border border-light-subtle rounded-4 shadow-sm h-100">
+                    <h3 class="h5 text-dark fw-bold border-bottom pb-2 mb-3">📋 Доступные проверочные тесты</h3>
+                    
+                    @if (testList == null || testList.Count == 0)
+                    {
+                        <p class="text-muted fst-italic text-center py-5 my-auto small">Для этой карты пока не создано ни одного теста.</p>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-2 overflow-y-auto pe-1" style="max-height: 600px;">
+                            @foreach (var t in testList)
+                            {
+                                <div class="p-3 border border-light-subtle rounded-3 bg-light d-flex justify-content-between align-items-center gap-3 shadow-sm">
+                                    <div class="text-truncate" style="flex: 1;">
+                                        <h4 class="h6 m-0 text-dark fw-bold text-truncate">
+                                            @t.Title 
+                                            @if (t.IsAiGenerated) { <span class="badge bg-purple-subtle text-purple px-2 py-1 small rounded ms-1" style="background-color: #f3e8ff; color: #7c3aed; font-size: 0.7rem;">🤖 ИИ</span> }
+                                        </h4>
+                                        <p class="text-muted small m-0 mt-1 text-truncate">@t.Description</p>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary text-white fw-bold px-3 py-2 rounded-3 border-0 flex-shrink-0" @onclick="() => StartTest(t.Id)">Пройти</button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
             </section>
 
-            <section style="background: #ffffff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
-                <h3 style="margin-top: 0; margin-bottom: 1.25rem; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">🛠️ Конструктор нового теста</h3>
-                
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div>
-                        <label style="font-weight: 600; font-size: 0.85rem; color: #475569;">Название теста:</label>
-                        <input type="text" @bind="newTestTitle" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 0.25rem;" placeholder="Например: Итоговый контроль по С#" />
-                    </div>
-                    <div>
-                        <label style="font-weight: 600; font-size: 0.85rem; color: #475569;">Краткое описание / Инструкция:</label>
-                        <textarea @bind="newTestDesc" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 0.25rem; height: 60px;" placeholder="Введите основные правила сдачи теста..."></textarea>
-                    </div>
-
-                    <div style="border-top: 1px dashed #cbd5e1; padding-top: 1rem; margin-top: 0.5rem;">
-                        <h4 style="margin: 0 0 1rem 0; color: #0f172a;">Вопросы квиза (@newQuestions.Count)</h4>
-                        
-                        <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1rem;">
-                            <input type="text" @bind="currentQuestionText" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="Текст вопроса..." />
-                            
-                            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;">
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <input type="radio" name="correct-opt" checked="@(correctOptIndex == 0)" @onclick="() => correctOptIndex = 0" />
-                                    <input type="text" @bind="opt1" style="flex: 1; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="Вариант 1 (Отметьте точку, если правильный)" />
-                                </div>
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <input type="radio" name="correct-opt" checked="@(correctOptIndex == 1)" @onclick="() => correctOptIndex = 1" />
-                                    <input type="text" @bind="opt2" style="flex: 1; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="Вариант 2" />
-                                </div>
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <input type="radio" name="correct-opt" checked="@(correctOptIndex == 2)" @onclick="() => correctOptIndex = 2" />
-                                    <input type="text" @bind="opt3" style="flex: 1; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="Вариант 3 (Необязательно)" />
-                                </div>
-                            </div>
-                            <button type="button" class="btn" style="background: #f1f5f9; width: 100%; margin-top: 0.75rem; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;" @onclick="AddQuestionToStack">
-                                ➕ Добавить вопрос в структуру
-                            </button>
+            <section class="col-12 col-lg-6">
+                <div class="card p-4 bg-white border border-light-subtle rounded-4 shadow-sm h-100">
+                    <h3 class="h5 text-dark fw-bold border-bottom pb-2 mb-3">🛠️ Конструктор нового теста</h3>
+                    
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary mb-1">Название теста:</label>
+                            <input type="text" @bind="newTestTitle" class="form-control form-control-sm text-sm" style="font-size: 0.95rem; border-radius: 6px;" placeholder="Например: Итоговый контроль по С#" />
                         </div>
-                    </div>
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary mb-1">Краткое описание / Инструкция:</label>
+                            <textarea @bind="newTestDesc" class="form-control form-control-sm text-sm" style="font-size: 0.95rem; border-radius: 6px; height: 60px;" placeholder="Введите основные правила сдачи теста..."></textarea>
+                        </div>
 
-                    <button class="btn text-white" style="background: #10b981; font-weight: 700; padding: 0.6rem; border-radius: 8px; border: none; margin-top: 1rem;" @onclick="SaveManualTest">
-                        💾 Опубликовать и сохранить тест
-                    </button>
+                        <div class="border-top border-secondary-subtle border-dashed pt-3 mt-2">
+                            <h4 class="h6 text-dark fw-bold mb-3">Вопросы квиза (@newQuestions.Count)</h4>
+                            
+                            <div class="p-3 border border-light-subtle rounded-3 mb-3 bg-light">
+                                <input type="text" @bind="currentQuestionText" class="form-control form-control-sm mb-3 text-sm" placeholder="Текст вопроса..." />
+                                
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="radio" class="form-check-input m-0 flex-shrink-0" name="correct-opt" checked="@(correctOptIndex == 0)" @onclick="() => correctOptIndex = 0" style="width: 1.1rem; height: 1.1rem;" />
+                                        <input type="text" @bind="opt1" class="form-control form-control-sm text-xs" style="font-size: 0.85rem;" placeholder="Вариант 1 (Отметьте точку, если правильный)" />
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="radio" class="form-check-input m-0 flex-shrink-0" name="correct-opt" checked="@(correctOptIndex == 1)" @onclick="() => correctOptIndex = 1" style="width: 1.1rem; height: 1.1rem;" />
+                                        <input type="text" @bind="opt2" class="form-control form-control-sm text-xs" style="font-size: 0.85rem;" placeholder="Вариант 2" />
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="radio" class="form-check-input m-0 flex-shrink-0" name="correct-opt" checked="@(correctOptIndex == 2)" @onclick="() => correctOptIndex = 2" style="width: 1.1rem; height: 1.1rem;" />
+                                        <input type="text" @bind="opt3" class="form-control form-control-sm text-xs" style="font-size: 0.85rem;" placeholder="Вариант 3 (Необязательно)" />
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-light border w-100 fw-bold py-2 mt-3 rounded-3" @onclick="AddQuestionToStack">
+                                    ➕ Добавить вопрос в структуру
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-success fw-bold py-2.5 rounded-3 border-0 text-white shadow-sm w-100 mt-2" @onclick="SaveManualTest">
+                            💾 Опубликовать и сохранить тест
+                        </button>
+                    </div>
                 </div>
             </section>
         </div>

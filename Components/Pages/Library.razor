@@ -8,47 +8,50 @@
 
 <PageTitle>Библиотека шаблонов | JIroad</PageTitle>
 
-<div class="library-container" style="max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; font-family: system-ui, sans-serif;">
-    <header style="margin-bottom: 2rem; background: #ffffff; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-        <h1 style="margin: 0; color: #0f172a; font-size: 1.5rem; font-weight: 700;">📚 Глобальная библиотека шаблонов</h1>
-        <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">Изучайте и заимствуйте лучшие учебные траектории сообщества JIroad</p>
+<div class="container-fluid px-2 px-md-4 my-4" style="max-width: 1200px; font-family: system-ui, sans-serif;">
+    
+    <header class="p-4 mb-4 bg-white border rounded-3 shadow-sm border-light-subtle">
+        <h1 class="m-0 text-dark fw-bold fs-4">📚 Глобальная библиотека шаблонов</h1>
+        <p class="m-0 text-muted mt-1 small" style="font-size: 0.95rem;">Изучайте и заимствуйте лучшие учебные траектории сообщества JIroad</p>
     </header>
 
     @if (_isLoading)
     {
-        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 250px; gap: 1rem;">
+        <div class="d-flex flex-column justify-content-center align-items-center" style="height: 250px; gap: 1rem;">
             <div class="spinner-border text-primary" role="status"></div>
-            <span style="color: #64748b; font-size: 0.9rem;">Загрузка общедоступных треков...</span>
+            <span class="text-muted small">Загрузка общедоступных треков...</span>
         </div>
     }
     else if (_templates.Count == 0)
     {
-        <div style="text-align: center; padding: 4rem 2rem; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
-            <h3 style="color: #0f172a; font-weight: 600; margin-bottom: 0.5rem;">В библиотеке пока пусто</h3>
-            <p style="color: #64748b; font-size: 0.95rem; max-width: 450px; margin: 0 auto;">Будьте первыми! Опубликуйте свою дорожную карту из её верхнего меню редактора холста, чтобы поделиться ей со всеми.</p>
+        <div class="text-center p-5 bg-white border border-light-subtle rounded-4 shadow-sm">
+            <div class="display-4 mb-3">📦</div>
+            <h3 class="h6 text-dark fw-bold mb-2">В библиотеке пока пусто</h3>
+            <p class="text-muted small mx-auto" style="max-width: 450px;">Будьте первыми! Опубликуйте свою дорожную карту из её верхнего меню редактора холста, чтобы поделиться ей со всеми.</p>
         </div>
     }
     else
     {
-        <div class="templates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+        <div class="row g-4">
             @foreach (var tm in _templates)
             {
-                <div class="template-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                            <h3 style="margin: 0; font-size: 1.15rem; color: #0f172a; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%;">@tm.Title</h3>
-                            <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.6rem; border-radius: 6px;">@tm.Difficulty</span>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card h-100 bg-white border border-light-subtle rounded-3 p-4 d-flex flex-column justify-content-between shadow-sm" style="transition: transform 0.2s;">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <h3 class="h6 m-0 text-dark fw-bold text-truncate" style="max-width: 75%;" title="@tm.Title">@tm.Title</h3>
+                                <span class="badge bg-light text-secondary border small py-1 px-2" style="font-size: 0.75rem;">@tm.Difficulty</span>
+                            </div>
+                            <p class="text-secondary small mb-4 lh-base" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4rem;">@tm.Description</p>
                         </div>
-                        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4rem;">@tm.Description</p>
-                    </div>
 
-                    <div style="border-top: 1px solid #f1f5f9; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.8rem; color: #64748b; font-weight: 500;">🧩 Этапов: <b>@tm.NodesCount</b></span>
-                        <button class="btn btn-sm text-white" style="background: #2563eb; font-weight: 600; border: none; padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
-                                @onclick="() => CloneTemplate(tm.Id)">
-                            📥 Забрать карту
-                        </button>
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top border-light-subtle">
+                            <span class="text-secondary small fw-medium">🧩 Этапов: <b class="text-dark">@tm.NodesCount</b></span>
+                            <button class="btn btn-sm btn-primary text-white fw-bold px-3 py-2 rounded-3 border-0"
+                                    @onclick="() => CloneTemplate(tm.Id)">
+                                📥 Забрать карту
+                            </button>
+                        </div>
                     </div>
                 </div>
             }

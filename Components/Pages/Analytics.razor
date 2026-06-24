@@ -8,159 +8,181 @@
 
 <PageTitle>Аналитика прогресса | JIroad</PageTitle>
 
-<div class="analytics-page-container" style="max-width: 1100px; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif;">
+<div class="container-fluid px-2 px-md-4 my-4" style="max-width: 1100px; font-family: system-ui, sans-serif;">
     
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem;">
+    <header class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-4 border-bottom gap-2">
         <div>
-            <button class="btn btn-sm btn-outline-secondary" style="margin-bottom: 0.5rem;" @onclick="BackToCanvas">← Вернуться к карте</button>
-            <h1 style="margin: 0; color: #0f172a; font-size: 1.75rem;">📊 Аналитика и метрики прогресса</h1>
-            <p style="margin: 0.25rem 0 0 0; color: #64748b;">Детальный отчет по дорожной карте #@RoadmapId</p>
+            <button class="btn btn-sm btn-outline-secondary mb-2" @onclick="BackToCanvas">← Вернуться к карте</button>
+            <h1 class="m-0 text-dark" style="font-size: 1.75rem; font-weight: 700;">📊 Аналитика и метрики прогресса</h1>
+            <p class="m-0 text-muted small" style="margin-top: 0.25rem !important;">Детальный отчет по дорожной карте #@RoadmapId</p>
         </div>
-        <button class="btn btn-primary" @onclick="RefreshData">🔄 Обновить данные</button>
+        <div>
+            <button class="btn btn-primary w-100" @onclick="RefreshData">🔄 Обновить данные</button>
+        </div>
     </header>
 
     @if (_isLoading)
     {
-        <div style="display: flex; justify-content: center; align-items: center; height: 200px;">
+        <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
             <div class="spinner-border text-primary" role="status"></div>
         </div>
     }
     else if (_data is null || _data.TotalNodes == 0)
     {
-        <div class="alert alert-info text-center" style="padding: 3rem;">
+        <div class="alert alert-info text-center p-5 shadow-sm rounded-3">
             <h3>Сбор метрик невозможен</h3>
-            <p class="margin: 0;">Добавьте хотя бы один обучающий узел (этап) на холст карты, чтобы система рассчитала аналитику.</p>
+            <p class="m-0">Добавьте хотя бы один обучающий узел (этап) на холст карты, чтобы система рассчитала аналитику.</p>
         </div>
     }
     else
     {
-        <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-            <div style="background: #fff; padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center;">
-                <div style="font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Всего этапов</div>
-                <div style="font-size: 2rem; font-weight: 700; color: #0f172a; margin-top: 0.25rem;">@_data.TotalNodes</div>
+        <section class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card h-100 text-center p-3 border border-light-subtle shadow-sm rounded-3">
+                    <div class="text-uppercase small fw-bold text-muted">Всего этапов</div>
+                    <div class="display-6 fw-bold text-dark mt-1">@_data.TotalNodes</div>
+                </div>
             </div>
-            <div style="background: #fff; padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; border-left: 4px solid #22c55e;">
-                <div style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Пройдено</div>
-                <div style="font-size: 2rem; font-weight: 700; color: #22c55e; margin-top: 0.25rem;">@_data.CompletedNodes</div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card h-100 text-center p-3 border border-light-subtle shadow-sm rounded-3 style-completed-border" style="border-left: 4px solid #22c55e !important;">
+                    <div class="text-uppercase small fw-bold text-muted">Пройдено</div>
+                    <div class="display-6 fw-bold text-success mt-1">@_data.CompletedNodes</div>
+                </div>
             </div>
-            <div style="background: #fff; padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; border-left: 4px solid #3b82f6;">
-                <div style="font-size: 0.85rem; font-weight: 600; color: #64748b;">В процессе</div>
-                <div style="font-size: 2rem; font-weight: 700; color: #3b82f6; margin-top: 0.25rem;">@_data.InProgressNodes</div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card h-100 text-center p-3 border border-light-subtle shadow-sm rounded-3 style-progress-border" style="border-left: 4px solid #3b82f6 !important;">
+                    <div class="text-uppercase small fw-bold text-muted">В процессе</div>
+                    <div class="display-6 fw-bold text-primary mt-1">@_data.InProgressNodes</div>
+                </div>
             </div>
-            <div style="background: #fff; padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center;">
-                <div style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Общий прогресс</div>
-                <div style="font-size: 2rem; font-weight: 700; color: #0f172a; margin-top: 0.25rem;">@_data.OverallProgress%</div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card h-100 text-center p-3 border border-light-subtle shadow-sm rounded-3">
+                    <div class="text-uppercase small fw-bold text-muted">Общий прогресс</div>
+                    <div class="display-6 fw-bold text-dark mt-1">@_data.OverallProgress%</div>
+                </div>
             </div>
         </section>
 
-        <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <section class="row g-4 mb-4">
             
-            <div style="background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center;">
-                <h3 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 1.5rem; width: 100%; text-align: left;">🍩 Распределение задач по статусам</h3>
-                
-                @{
-                    double total = _data.TotalNodes;
-                    double complDeg = (_data.CompletedNodes / total) * 360;
-                    double progDeg = (_data.InProgressNodes / total) * 360;
-                    double planDeg = (_data.PlannedNodes / total) * 360;
-                }
-                
-                <div style="display: flex; align-items: center; gap: 2rem; width: 100%; justify-content: center;">
-                    <svg width="160" height="160" viewBox="0 0 42 42" class="donut-chart-svg">
-                        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#e2e8f0" stroke-width="4.5"></circle>
-                        
-                        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#22c55e" stroke-width="4.5" 
-                                stroke-dasharray="@($"{((_data.CompletedNodes/total)*100).ToString(CultureInfo.InvariantCulture)} {((1 - _data.CompletedNodes/total)*100).ToString(CultureInfo.InvariantCulture)}")" stroke-dashoffset="25"></circle>
-                        
-                        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3b82f6" stroke-width="4.5" 
-                                stroke-dasharray="@($"{((_data.InProgressNodes/total)*100).ToString(CultureInfo.InvariantCulture)} {((1 - _data.InProgressNodes/total)*100).ToString(CultureInfo.InvariantCulture)}")" 
-                                stroke-dashoffset="@((25 - (_data.CompletedNodes/total)*100).ToString(CultureInfo.InvariantCulture))"></circle>
-                    </svg>
+            <div class="col-12 col-lg-6">
+                <div class="card h-100 p-4 border border-light-subtle shadow-sm rounded-3 d-flex flex-column align-items-center">
+                    <h3 class="w-100 text-start text-dark mb-4" style="font-size: 1.1rem; font-weight: 600;">🍩 Распределение задач по статусам</h3>
+                    
+                    @{
+                        double total = _data.TotalNodes;
+                        double complDeg = (_data.CompletedNodes / total) * 360;
+                        double progDeg = (_data.InProgressNodes / total) * 360;
+                        double planDeg = (_data.PlannedNodes / total) * 360;
+                    }
+                    
+                    <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-4 w-100 my-auto">
+                        <div class="donut-chart-wrapper">
+                            <svg width="160" height="160" viewBox="0 0 42 42" class="donut-chart-svg">
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#e2e8f0" stroke-width="4.5"></circle>
+                                
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#22c55e" stroke-width="4.5" 
+                                        stroke-dasharray="@($"{((_data.CompletedNodes/total)*100).ToString(CultureInfo.InvariantCulture)} {((1 - _data.CompletedNodes/total)*100).ToString(CultureInfo.InvariantCulture)}")" stroke-dashoffset="25"></circle>
+                                
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3b82f6" stroke-width="4.5" 
+                                        stroke-dasharray="@($"{((_data.InProgressNodes/total)*100).ToString(CultureInfo.InvariantCulture)} {((1 - _data.InProgressNodes/total)*100).ToString(CultureInfo.InvariantCulture)}")" 
+                                        stroke-dashoffset="@((25 - (_data.CompletedNodes/total)*100).ToString(CultureInfo.InvariantCulture))"></circle>
+                            </svg>
+                        </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                            <span style="width: 12px; height: 12px; background: #22c55e; border-radius: 3px;"></span>
-                            <span>Завершено: <b>@_data.CompletedNodes</b></span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                            <span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 3px;"></span>
-                            <span>В изучении: <b>@_data.InProgressNodes</b></span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                            <span style="width: 12px; height: 12px; background: #64748b; border-radius: 3px;"></span>
-                            <span>Запланировано: <b>@_data.PlannedNodes</b></span>
+                        <div class="d-flex flex-column gap-2 text-start">
+                            <div class="d-flex align-items-center gap-2 small">
+                                <span style="width: 12px; height: 12px; background: #22c55e; border-radius: 3px; display: inline-block;"></span>
+                                <span>Завершено: <b>@_data.CompletedNodes</b></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 small">
+                                <span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 3px; display: inline-block;"></span>
+                                <span>В изучении: <b>@_data.InProgressNodes</b></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 small">
+                                <span style="width: 12px; height: 12px; background: #64748b; border-radius: 3px; display: inline-block;"></span>
+                                <span>Запланировано: <b>@_data.PlannedNodes</b></span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div style="background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <h3 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 1.5rem;">📊 Направленность обучения (по типам контента)</h3>
-                
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    @foreach (var typeBucket in _data.NodesByType)
-                    {
-                        int maxCount = _data.NodesByType.Max(x => x.Count);
-                        double barWidthPercent = maxCount > 0 ? ((double)typeBucket.Count / maxCount) * 100 : 0;
-                        
-                        <div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
-                                <span style="font-weight: 500; color: #475569;">@typeBucket.Type</span>
-                                <span style="font-weight: 600; color: #0f172a;">@typeBucket.Count</span>
+            <div class="col-12 col-lg-6">
+                <div class="card h-100 p-4 border border-light-subtle shadow-sm rounded-3">
+                    <h3 class="text-dark mb-4" style="font-size: 1.1rem; font-weight: 600;">📊 Направленность обучения (по типам контента)</h3>
+                    
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var typeBucket in _data.NodesByType)
+                        {
+                            int maxCount = _data.NodesByType.Max(x => x.Count);
+                            double barWidthPercent = maxCount > 0 ? ((double)typeBucket.Count / maxCount) * 100 : 0;
+                            
+                            <div>
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span class="text-secondary fw-medium">@typeBucket.Type</span>
+                                    <span class="text-dark fw-bold">@typeBucket.Count</span>
+                                </div>
+                                <div class="w-100 bg-light-subtle" style="height: 12px; border-radius: 6px; overflow: hidden; background-color: #f1f5f9;">
+                                    <div style="width: @barWidthPercent.ToString(CultureInfo.InvariantCulture)%; background: #6366f1; height: 100%; border-radius: 6px;"></div>
+                                </div>
                             </div>
-                            <div style="width: 100%; background: #f1f5f9; height: 12px; border-radius: 6px; overflow: hidden;">
-                                <div style="width: @barWidthPercent.ToString(CultureInfo.InvariantCulture)%; background: #6366f1; height: 100%; border-radius: 6px;"></div>
-                            </div>
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+        <section class="row g-4">
             
-            <div style="background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <h3 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 1rem;">⚡ Сложность</h3>
-                <table class="table" style="font-size: 0.9rem; margin: 0;">
-                    <thead>
-                        <tr>
-                            <th>Уровень</th>
-                            <th style="text-align: right;">Кол-во</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var diff in _data.NodesByDifficulty)
-                        {
-                            <tr>
-                                <td>@diff.Difficulty</td>
-                                <td style="text-align: right; font-weight: bold;">@diff.Count</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="col-12 col-md-5 col-lg-4">
+                <div class="card h-100 p-4 border border-light-subtle shadow-sm rounded-3">
+                    <h3 class="text-dark mb-3" style="font-size: 1.1rem; font-weight: 600;">⚡ Сложность</h3>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless m-0 align-middle small">
+                            <thead>
+                                <tr class="border-bottom">
+                                    <th class="pb-2">Уровень</th>
+                                    <th class="text-end pb-2">Кол-во</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var diff in _data.NodesByDifficulty)
+                                {
+                                    <tr>
+                                        <td class="py-2 text-secondary">@diff.Difficulty</td>
+                                        <td class="text-end py-2 fw-bold text-dark">@diff.Count</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
-            <div style="background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <h3 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 1rem;">📝 Сводный текстовый отчет по карте</h3>
-                
-                <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; font-size: 0.95rem; line-height: 1.6; color: #334155;">
-                    <p style="margin-top: 0;">
-                        Текущий уровень готовности дорожной карты составляет <b>@_data.OverallProgress%</b>. 
-                        Архитектура содержит в себе <b>@_data.TotalNodes</b> основных этапов обучения, соединенных <b>@_data.TotalEdges</b> связями зависимостей.
-                    </p>
+            <div class="col-12 col-md-7 col-lg-8">
+                <div class="card h-100 p-4 border border-light-subtle shadow-sm rounded-3">
+                    <h3 class="text-dark mb-3" style="font-size: 1.1rem; font-weight: 600;">📝 Сводный текстовый отчет по карте</h3>
                     
-                    @if (_data.OverallProgress >= 80)
-                    {
-                        <p style="color: #166534; font-weight: 500; margin: 0;">🏆 Отличный результат! Специализация практически полностью освоена и закреплена на холсте.</p>
-                    }
-                    else if (_data.OverallProgress > 30)
-                    {
-                        <p style="color: #1e3a8a; font-weight: 500; margin: 0;">🚀 Хороший темп. Рекомендуется уделить внимание связям типа «Альтернативный путь» для расширения квалификации.</p>
-                    }
-                    else
-                    {
-                        <p style="color: #9a3412; font-weight: 500; margin: 0;">⏳ Обучение находится на начальной стадии. Начните планомерно проходить «Planned» этапы.</p>
-                    }
+                    <div class="p-3 border-0 rounded-3 text-secondary lh-lg" style="background-color: #f8fafc; font-size: 0.95rem;">
+                        <p class="mt-0 mb-2">
+                            Текущий уровень готовности дорожной карты составляет <b>@_data.OverallProgress%</b>. 
+                            Архитектура содержит в себе <b>@_data.TotalNodes</b> основных этапов обучения, соединенных <b>@_data.TotalEdges</b> связями зависимостей.
+                        </p>
+                        
+                        @if (_data.OverallProgress >= 80)
+                        {
+                            <p class="text-success fw-medium m-0">🏆 Отличный результат! Специализация практически полностью освоена и закреплена на холсте.</p>
+                        }
+                        else if (_data.OverallProgress > 30)
+                        {
+                            <p class="text-primary fw-medium m-0">🚀 Хороший темп. Рекомендуется уделить внимание связям типа «Альтернативный путь» для расширения квалификации.</p>
+                        }
+                        else
+                        {
+                            <p class="text-warning fw-medium m-0" style="color: #9a3412 !important;">⏳ Обучение находится на начальной стадии. Начните планомерно проходить «Planned» этапы.</p>
+                        }
+                    </div>
                 </div>
             </div>
         </section>

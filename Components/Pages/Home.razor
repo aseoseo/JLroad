@@ -32,120 +32,131 @@
     </div>
 </section>
 
-<main class="site site-main">
-    <header class="mammut-nav page-enter">
-        <div class="mammut-utility">
-            <span>Платформа JIroad</span>
-            <div class="mammut-utility-links">
+<main class="site site-main container-fluid p-0">
+    <header class="mammut-nav page-enter bg-white border-bottom shadow-sm">
+        <div class="mammut-utility d-flex flex-column flex-sm-row justify-content-between align-items-center px-3 py-1 bg-light border-bottom gap-1">
+            <span class="text-secondary small fw-medium">Платформа JIroad</span>
+            <div class="mammut-utility-links d-flex gap-3 small flex-wrap justify-content-center">
                 <AuthorizeView>
                     <Authorized>
-                        <a href="/library">Публичные roadmap</a>
-                        <a href="/search">Поиск</a>
+                        <a href="/library" class="text-decoration-none text-secondary">Публичные roadmap</a>
+                        <a href="/search" class="text-decoration-none text-secondary">Поиск</a>
                         @if (context.User.IsInRole("Mentor") || context.User.IsInRole("Admin"))
                         {
-                            <a href="/mentor/dashboard">Панель отслеживания</a>
+                            <a href="/mentor/dashboard" class="text-decoration-none text-primary fw-semibold">Панель отслеживания</a>
                         }
                         else
                         {
-                            <a href="/dashboard">Рабочая зона</a>
+                            <a href="/dashboard" class="text-decoration-none text-primary fw-semibold">Рабочая зона</a>
                         }
                     </Authorized>
                     <NotAuthorized>
-                        <span style="color: #64748b; font-size: 0.85rem; padding-right: 15px;">🔒 Авторизуйтесь для доступа к инструментам</span>
+                        <span class="text-muted small">🔒 Авторизуйтесь для доступа к инструментам</span>
                     </NotAuthorized>
                 </AuthorizeView>
             </div>
         </div>
-        <div class="mammut-main">
-            <a href="/" class="mammut-logo">JIroad</a>
-            <nav class="mammut-links">
-                <a href="#features">Возможности</a>
-                <a href="/library">Дорожные карты</a>
-                <a href="/collaboration">Совместная работа</a>
-                <a href="#contacts">Контакты</a>
+        
+        <div class="mammut-main d-flex flex-column flex-md-row align-items-center justify-content-between p-3 gap-3">
+            <a href="/" class="mammut-logo fs-4 fw-extrabold text-primary text-decoration-none style-brand" style="font-weight: 800;">JIroad</a>
+            
+            <nav class="mammut-links d-flex flex-wrap gap-3 justify-content-center">
+                <a href="#features" class="text-decoration-none text-dark fw-medium small">Возможности</a>
+                <a href="/library" class="text-decoration-none text-dark fw-medium small">Дорожные карты</a>
+                <a href="/collaboration" class="text-decoration-none text-dark fw-medium small">Совместная работа</a>
+                <a href="#contacts" class="text-decoration-none text-dark fw-medium small">Контакты</a>
             </nav>
             
-            <div class="mammut-actions">
+            <div class="mammut-actions d-flex gap-2">
                 <AuthorizeView>
                     <Authorized>
-                        <button type="button" class="ghost" @onclick='() => Nav.NavigateTo("/profile")'>Профиль</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-3" @onclick='() => Nav.NavigateTo("/profile")'>Профиль</button>
                         @if (context.User.IsInRole("Mentor") || context.User.IsInRole("Admin"))
                         {
-                            <button type="button" class="cta" @onclick='() => Nav.NavigateTo("/mentor/dashboard")'>Панель Mentora</button>
+                            <button type="button" class="btn btn-sm btn-primary text-white" @onclick='() => Nav.NavigateTo("/mentor/dashboard")'>Панель Mentora</button>
                         }
                         else
                         {
-                            <button type="button" class="cta" @onclick='() => Nav.NavigateTo("/dashboard")'>Рабочая зона</button>
+                            <button type="button" class="btn btn-sm btn-primary text-white" @onclick='() => Nav.NavigateTo("/dashboard")'>Рабочая зона</button>
                         }
                     </Authorized>
                     <NotAuthorized>
-                        <button type="button" class="ghost" @onclick="OpenAuthModal">Войти</button>
-                        <button type="button" class="cta" @onclick="OpenAuthModal">Регистрация</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary px-3" @onclick="OpenAuthModal">Войти</button>
+                        <button type="button" class="btn btn-sm btn-primary text-white px-3" @onclick="OpenAuthModal">Регистрация</button>
                     </NotAuthorized>
                 </AuthorizeView>
             </div>
         </div>
     </header>
 
-    <section class="hero hero-centered page-enter">
-        <p class="eyebrow">Дорожные карты обучения</p>
-        <h1>Построй свой путь обучения в одном пространстве</h1>
-        <p class="lead">Создавай, связывай и проходи roadmap с визуальной структурой и персональными подсказками.</p>
-        <div class="hero-actions">
+    <section class="hero hero-centered page-enter text-center px-3 py-5 my-3 my-md-5 mx-auto" style="max-width: 800px;">
+        <p class="eyebrow badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-bold text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.05em;">Дорожные карты обучения</p>
+        <h1 class="display-5 fw-bold text-dark lh-sm mb-3">Построй свой путь обучения в одном пространстве</h1>
+        <p class="lead text-secondary fs-5 mb-4 mx-auto" style="max-width: 600px;">Создавай, связывай и проходи roadmap с визуальной структурой и персональными подсказками.</p>
+        <div class="hero-actions d-flex justify-content-center">
             <AuthorizeView>
                 <Authorized>
                     @if (context.User.IsInRole("Mentor") || context.User.IsInRole("Admin"))
                     {
-                        <button type="button" class="cta start-btn" @onclick='() => Nav.NavigateTo("/mentor/dashboard")'>Открыть треки студентов</button>
+                        <button type="button" class="btn btn-primary btn-lg text-white px-4 shadow" @onclick='() => Nav.NavigateTo("/mentor/dashboard")'>Открыть треки студентов</button>
                     }
                     else
                     {
-                        <button type="button" class="cta start-btn" @onclick='() => Nav.NavigateTo("/dashboard")'>В рабочую зону</button>
+                        <button type="button" class="btn btn-primary btn-lg text-white px-4 shadow" @onclick='() => Nav.NavigateTo("/dashboard")'>В рабочую зону</button>
                     }
                 </Authorized>
                 <NotAuthorized>
-                    <button type="button" class="cta start-btn" @onclick="OpenAuthModal">Начать работу</button>
+                    <button type="button" class="btn btn-primary btn-lg text-white px-5 shadow fw-bold" @onclick="OpenAuthModal">Начать работу</button>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
     </section>
 
-    <section id="features" class="panel page-enter">
-        <h2>Ключевые возможности</h2>
-        <div class="cards">
-            <article>Infinite Canvas</article>
-            <article>Бесконечный холст</article>
-            <article>ИИ-генерация roadmap</article>
-            <article>Аналитика прогресса</article>
-            <article>Совместная работа</article>
-            <article>Экспорт: JSON / PNG / SVG / PDF / CSV</article>
-            <article>Гибкая настройка узлов и связей</article>
+    <section id="features" class="panel page-enter container my-5 p-4 bg-white border rounded-4 shadow-sm">
+        <h2 class="h3 text-dark fw-bold mb-4 text-center text-md-start">Ключевые возможности</h2>
+        <div class="row g-3 text-center">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3"><article class="p-3 border rounded-3 h-100 bg-light fw-medium small">Infinite Canvas</article></div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3"><article class="p-3 border rounded-3 h-100 bg-light fw-medium small">Бесконечный холст</article></div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3"><article class="p-3 border rounded-3 h-100 bg-light fw-medium small">ИИ-генерация roadmap</article></div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3"><article class="p-3 border rounded-3 h-100 bg-light fw-medium small">Аналитика прогресса</article></div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3"><article class="p-3 border rounded-3 h-100 bg-light fw-medium small">Совместная работа</article></div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3"><article class="p-3 border rounded-3 h-100 bg-light fw-medium small">Экспорт: JSON / PNG / SVG / PDF / CSV</article></div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3"><article class="p-3 border rounded-3 h-100 bg-light fw-medium small">Гибкая настройка узлов и связей</article></div>
         </div>
     </section>
 
-    <footer id="contacts" class="panel page-enter">
-        <h2>Контакты</h2>
-        <div class="hero-actions">
-            <a href="/dashboard" class="ghost">Документация</a>
-            <a href="https://github.com/" target="_blank" class="ghost">GitHub</a>
-            <a href="/403" class="ghost">Пользовательское соглашение</a>
-            <a href="/403" class="ghost">Политика конфиденциальности</a>
+    <footer id="contacts" class="panel page-enter container my-5 p-4 bg-dark text-white border rounded-4 shadow">
+        <h2 class="h4 fw-bold mb-3 text-center text-md-start">Контакты и Ресурсы</h2>
+        <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start pt-2">
+            <a href="/dashboard" class="btn btn-sm btn-outline-light px-3">Документация</a>
+            <a href="https://github.com/" target="_blank" class="btn btn-sm btn-outline-light px-3">GitHub</a>
+            <a href="/403" class="btn btn-sm btn-outline-secondary px-3 text-muted">Пользовательское соглашение</a>
+            <a href="/403" class="btn btn-sm btn-outline-secondary px-3 text-muted">Политика конфиденциальности</a>
         </div>
     </footer>
 </main>
 
 @if (showAuthModal)
 {
-    <div class="auth-modal-backdrop" @onclick="CloseAuthModal">
-        <section class="auth-modal" @onclick:stopPropagation="true">
-            <h2>Добро пожаловать в JIroad</h2>
-            <p>Выберите действие для продолжения работы.</p>
-            <div class="auth-modal-actions">
-                <a class="cta" href="/auth/login">Авторизация</a>
-                <a class="ghost" href="/auth/register">Регистрация</a>
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5); z-index: 1050;" @onclick="CloseAuthModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content border-0 shadow-lg p-3 rounded-4">
+                <header class="modal-header border-0 pb-0 justify-content-between align-items-center">
+                    <h5 class="modal-title fw-bold text-dark h4 m-0">Добро пожаловать в JIroad</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAuthModal"></button>
+                </header>
+                <main class="modal-body text-start pt-2">
+                    <p class="text-secondary small">Выберите действие для продолжения работы.</p>
+                    <div class="d-flex flex-column gap-2 my-3">
+                        <a class="btn btn-primary text-white fw-bold py-2" href="/auth/login">Авторизация</a>
+                        <a class="btn btn-light border fw-semibold py-2" href="/auth/register">Регистрация</a>
+                    </div>
+                </main>
+                <footer class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100" @onclick="CloseAuthModal">Закрыть</button>
+                </footer>
             </div>
-            <button type="button" class="ghost" @onclick="CloseAuthModal">Закрыть</button>
-        </section>
+        </div>
     </div>
 }
 

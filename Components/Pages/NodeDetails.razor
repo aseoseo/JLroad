@@ -7,94 +7,98 @@
 
 <PageTitle>Детали этапа | JIroad</PageTitle>
 
-<div class="node-details-container" style="max-width: 800px; margin: 2rem auto; padding: 2rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+<div class="container my-4 px-2 px-md-3 text-start" style="max-width: 800px; font-family: system-ui, sans-serif;">
     @if (node is null)
     {
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Загрузка...</span>
+        <div class="d-flex justify-content-center align-items-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
         </div>
     }
     else
     {
-        <header style="border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
+        <header class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-start border-bottom pb-3 mb-4 gap-3">
             <div>
-                <button class="btn btn-sm btn-outline-secondary" style="margin-bottom: 1rem;" @onclick="GoBackToCanvas">← Вернуться к карте</button>
-                <h1 style="font-size: 1.75rem; color: #0f172a; margin: 0;">@node.Title</h1>
-                <p style="color: #64748b; margin: 0.5rem 0 0 0;">Тип: <b>@LocalizeType(node.Type)</b> | Сложность: <b>@node.Difficulty</b></p>
+                <button class="btn btn-sm btn-outline-secondary mb-3" @onclick="GoBackToCanvas">← Вернуться к карте</button>
+                <h1 class="h3 text-dark fw-bold m-0">@node.Title</h1>
+                <p class="text-muted small mt-2 m-0">Тип: <b class="text-dark">@LocalizeType(node.Type)</b> | Сложность: <b class="text-dark">@node.Difficulty</b></p>
             </div>
-            <span class="badge @(node.Status == "Completed" ? "bg-success" : node.Status == "In Progress" ? "bg-primary" : "bg-secondary")" style="padding: 0.6rem 1rem; font-size: 0.9rem;">
+            <span class="badge @(node.Status == "Completed" ? "bg-success" : node.Status == "In Progress" ? "bg-primary" : "bg-secondary") py-2 px-3 fs-6 rounded-3">
                 @GetStatusText(node.Status)
             </span>
         </header>
 
-        <section style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem;">
-            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem; color: #334155; display: flex; align-items: center; gap: 0.5rem;">
+        <section class="card p-4 border border-light-subtle rounded-3 shadow-sm bg-light mb-4">
+            <h3 class="h6 text-secondary fw-bold mb-3 d-flex align-items-center gap-2">
                 📊 Прогресс выполнения этапа
             </h3>
             
-            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem;">
-                <div style="flex: 1; display: flex; align-items: center; gap: 1rem;">
-                    <input type="range" min="0" max="100" class="form-range" style="flex: 1;" value="@node.Progress" @onchange="HandleProgressSliderChange" />
-                    <span style="font-size: 1.1rem; font-weight: bold; color: #0f172a; min-width: 50px; text-align: right;">
+            <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3 mb-3">
+                <div class="d-flex align-items-center gap-2 flex-grow-1 w-100">
+                    <input type="range" min="0" max="100" class="form-range" value="@node.Progress" @onchange="HandleProgressSliderChange" />
+                    <span class="h5 fw-bold text-dark m-0 ps-2" style="min-width: 55px; text-align: right;">
                         @node.Progress%
                     </span>
                 </div>
         
-                @if (node.Status != "Completed")
-                {
-                    <button class="btn btn-success" style="display: flex; align-items: center; gap: 0.4rem; font-weight: 500;" @onclick="MarkAsCompleted">
-                        ✓ Завершить этап
-                    </button>
-                }
-                else
-                {
-                    <button class="btn btn-outline-secondary" style="font-size: 0.85rem;" @onclick="ResetProgress">
-                        Сбросить прогресс
-                    </button>
-                }
+                <div class="w-100 w-sm-auto text-end">
+                    @if (node.Status != "Completed")
+                    {
+                        <button class="btn btn-success text-white fw-bold px-3 w-100 w-sm-auto" @onclick="MarkAsCompleted">
+                            ✓ Завершить этап
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary btn-sm w-100 w-sm-auto" @onclick="ResetProgress">
+                            Сбросить прогресс
+                        </button>
+                    }
+                </div>
             </div>
 
-            <div class="progress" style="height: 8px; border-radius: 4px; background-color: #e2e8f0; overflow: hidden;">
+            <div class="progress rounded-pill bg-secondary-subtle overflow-hidden" style="height: 8px;">
                 <div class="progress-bar @(node.Progress == 100 ? "bg-success" : "bg-primary")" role="progressbar" style="width: @node.Progress%; transition: width 0.3s ease;" aria-valuenow="@node.Progress" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </section>
 
-        <section style="margin-bottom: 2rem;">
-            <h3 style="font-size: 1.2rem; color: #1e293b;">Описание</h3>
-            <p style="color: #334155; line-height: 1.6; white-space: pre-wrap;">
+        <section class="mb-4">
+            <h3 class="h5 text-dark fw-bold mb-2">Описание</h3>
+            <p class="text-secondary lh-base" style="white-space: pre-wrap;">
                 @(string.IsNullOrWhiteSpace(node.Description) ? "Описание для этого этапа отсутствует." : node.Description)
             </p>
         </section>
 
         @if (personalTasks != null && personalTasks.Any())
         {
-            <section style="margin-bottom: 2rem; padding: 1.25rem; border: 1px solid #f3e8ff; background: #faf5ff; border-radius: 8px;">
-                <h3 style="font-size: 1.1rem; color: #6b21a8; margin-top: 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <section class="card border border-purple-subtle rounded-3 p-3 mb-4" style="background-color: #faf5ff;">
+                <h3 class="h6 text-purple fw-bold mb-3 d-flex align-items-center gap-2" style="color: #6b21a8;">
                     ✨ Персональное задание от наставника
                 </h3>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="d-flex flex-column gap-2">
                     @foreach (var task in personalTasks)
                     {
-                        <div style="padding: 1rem; background: #ffffff; border: 1px solid #e9d5ff; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                    <span class="badge" style="background-color: #a855f7; color: white;">
+                        <div class="card p-3 bg-white border border-secondary-subtle rounded-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 shadow-sm">
+                            <div class="text-start">
+                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                    <span class="badge p-1" style="background-color: #a855f7; color: white;">
                                         @(task.TaskType switch { "Video" => "🎬 Видеоматериал", "Link" => "🔗 Ресурс / Ссылка", _ => "📝 Задание" })
                                     </span>
-                                    <strong style="color: #581c87; font-size: 0.95rem;">@task.Title</strong>
+                                    <strong class="small text-dark">@task.Title</strong>
                                 </div>
                                 @if (task.TaskType == "Video" || task.TaskType == "Link")
                                 {
-                                    <a href="@task.Content" target="_blank" style="color: #2563eb; font-weight: 500; text-decoration: none; font-size: 0.9rem; word-break: break-all;">
+                                    <a href="@task.Content" target="_blank" class="text-primary fw-medium text-decoration-underline text-break small">
                                         🌐 Открыть прикрепленный ресурс
                                     </a>
                                 }
                                 else
                                 {
-                                    <p style="margin: 0; color: #334155; font-size: 0.9rem; white-space: pre-wrap;">@task.Content</p>
+                                    <p class="m-0 text-secondary small lh-sm" style="white-space: pre-wrap;">@task.Content</p>
                                 }
                             </div>
-                            <span class="badge" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; background-color: @(task.Status == "Approved" ? "#22c55e" : "#e2e8f0"); color: @(task.Status == "Approved" ? "#fff" : "#475569");">
+                            <span class="badge align-self-start align-self-sm-center py-1.5 px-2 small" style="background-color: @(task.Status == "Approved" ? "#22c55e" : "#e2e8f0"); color: @(task.Status == "Approved" ? "#fff" : "#475569");">
                                 @(task.Status switch { "Assigned" => "Выдано", "Submitted" => "На проверке", "Approved" => "Принято", _ => "Доработка" })
                             </span>
                         </div>
@@ -103,22 +107,22 @@
             </section>
         }
 
-        <section style="margin-bottom: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
-                <h3 style="font-size: 1.2rem; color: #1e293b; margin: 0;">📚 Обучающие материалы</h3>
-                <button class="btn btn-sm btn-primary" @onclick="() => _showAddMaterial = true">+ Добавить material</button>
+        <section class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h3 class="h5 text-dark fw-bold m-0">📚 Обучающие материалы</h3>
+                <button class="btn btn-sm btn-primary text-white" @onclick="() => _showAddMaterial = true">+ Добавить материал</button>
             </div>
 
             @if (_showAddMaterial)
             {
-                <form @onsubmit="AddMaterial" style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+                <form @onsubmit="AddMaterial" class="p-3 bg-light border border-light-subtle rounded-3 mb-3">
                     <div class="mb-2">
                         <input class="form-control form-control-sm" placeholder="Название материала" @bind="_newMaterialTitle" required />
                     </div>
                     <div class="mb-2">
                         <input class="form-control form-control-sm" placeholder="Ссылка (URL)" @bind="_newMaterialUrl" required />
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-3">
                         <select class="form-select form-select-sm" @bind="_newMaterialType">
                             <option value="Article">Статья / Документация</option>
                             <option value="Video">Видео-урок</option>
@@ -126,53 +130,53 @@
                             <option value="Book">Книга</option>
                         </select>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                        <button type="button" class="btn btn-sm btn-light" @onclick="() => _showAddMaterial = false">Отмена</button>
-                        <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-sm btn-light border" @onclick="() => _showAddMaterial = false">Отмена</button>
+                        <button type="submit" class="btn btn-sm btn-primary text-white px-3">Сохранить</button>
                     </div>
                 </form>
             }
 
             @if (materials.Count == 0)
             {
-                <p class="text-muted" style="font-size: 0.9rem; font-style: italic;">Пока нет добавленных материалов для изучения.</p>
+                <p class="text-muted small fst-italic">Пока нет добавленных материалов для изучения.</p>
             }
             else
             {
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="d-flex flex-column gap-2">
                     @foreach (var m in materials)
                     {
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;">
-                            <div>
-                                <span class="badge bg-light text-dark" style="margin-right: 0.5rem;">@LocalizeMaterialType(m.MaterialType)</span>
-                                <a href="@m.Url" target="_blank" style="font-weight: 500; color: #2563eb; text-decoration: none;">@m.Title</a>
+                        <div class="d-flex justify-content-between align-items-center p-2.5 px-3 border border-light-subtle rounded-3 bg-white shadow-sm small">
+                            <div class="text-truncate pe-2">
+                                <span class="badge bg-light text-dark border me-2">@LocalizeMaterialType(m.MaterialType)</span>
+                                <a href="@m.Url" target="_blank" class="text-primary text-decoration-none fw-medium">@m.Title</a>
                             </div>
-                            <button class="btn btn-sm text-danger" style="border: none; background: transparent;" @onclick="() => DeleteMaterial(m.Id)">🗑</button>
+                            <button type="button" class="btn btn-sm text-danger border-0 p-0 fs-5 line-height-1" @onclick="() => DeleteMaterial(m.Id)">🗑</button>
                         </div>
                     }
                 </div>
             }
         </section>
 
-        <section style="margin-top: 3rem;">
-            <h3 style="font-size: 1.2rem; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">💬 Обсуждение этапа</h3>
+        <section class="mt-5">
+            <h3 class="h5 text-dark fw-bold border-bottom pb-2 mb-3">💬 Обсуждение этапа</h3>
             
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                <input class="form-control" placeholder="Напишите комментарий или задайте вопрос..." @bind="_newCommentText" />
-                <button class="btn btn-primary" @onclick="AddComment">Отправить</button>
+            <div class="d-flex gap-2 mb-4">
+                <input class="form-control text-sm" placeholder="Напишите комментарий или задайте вопрос..." @bind="_newCommentText" />
+                <button type="button" class="btn btn-primary text-white fw-bold px-4" @onclick="AddComment">Отправить</button>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="d-flex flex-column gap-3">
                 @foreach (var c in comments)
                 {
-                    <div style="padding: 1rem; border-radius: 8px; background: @(c.AuthorRole == "Mentor" ? "#f0f9ff" : "#f8fafc"); border: 1px solid @(c.AuthorRole == "Mentor" ? "#bae6fd" : "#e2e8f0");">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                            <span style="font-size: 0.8rem; font-weight: bold; color: @(c.AuthorRole == "Mentor" ? "#0369a1" : "#475569");">
+                    <div class="p-3 border rounded-3 text-start" style="background-color: @(c.AuthorRole == "Mentor" ? "#f0f9ff" : "#f8fafc"); border-color: @(c.AuthorRole == "Mentor" ? "#bae6fd" : "#e2e8f0") !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+                            <span class="small fw-bold" style="color: @(c.AuthorRole == "Mentor" ? "#0369a1" : "#475569");">
                                 @(c.AuthorRole == "Mentor" ? "👨‍🏫 Ментор" : "🎓 Студент")
                             </span>
-                            <span style="font-size: 0.75rem; color: #94a3b8;">@c.CreatedAtUtc.ToLocalTime().ToString("g")</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">@c.CreatedAtUtc.ToLocalTime().ToString("g")</span>
                         </div>
-                        <p style="margin: 0; color: #334155; font-size: 0.95rem;">@c.Text</p>
+                        <p class="m-0 text-dark small lh-base">@c.Text</p>
                     </div>
                 }
             </div>
@@ -263,7 +267,6 @@
         Console.WriteLine($"[DIAGNOSTIC] Загружено узлов преподавателя (карта 100): {mentorNodes.Count} шт.");
 
         // Ищем узел ментора с ТОЧНО таким же названием
-        // Trim() убирает случайные пробелы в начале/конце, а StringComparison игнорирует регистр букв
         var correspondingMentorNode = mentorNodes.FirstOrDefault(x => 
             x.Title?.Trim().Equals(node.Title?.Trim(), StringComparison.OrdinalIgnoreCase) == true);
 

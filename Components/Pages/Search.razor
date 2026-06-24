@@ -7,55 +7,81 @@
 
 <PageTitle>Поиск | JIroad</PageTitle>
 
-<h1>Поиск</h1>
-<section class="panel">
-    <form class="editor" @onsubmit="RunSearch" @onsubmit:preventDefault="true">
-        <input placeholder="Поиск roadmap, узлов, пользователей, материалов, тегов" @bind="q"/>
-        <select @bind="difficulty">
-            <option value="">Сложность: любая</option>
-            <option>Beginner</option>
-            <option>Intermediate</option>
-            <option>Advanced</option>
-        </select>
-        <input placeholder="Категория" @bind="category"/>
-        
-        <select @bind="searchScope">
-            <option value="all">Искать везде</option>
-            <option value="my">Мои дорожные карты</option>
-            <option value="public">Общая библиотека</option>
-        </select>
-        
-        <button type="submit">Найти</button>
-    </form>
-</section>
-
-<section class="panel">
-    @if (isSearched && !items.Any())
-    {
-        <p style="color: #64748b; font-size: 0.95rem;">Ничего не найдено по вашему запросу.</p>
-    }
+<div class="container-fluid px-2 px-md-4 my-4 text-start" style="max-width: 1200px; font-family: system-ui, sans-serif;">
     
-    <div class="cards">
-        @foreach (var roadmap in items)
-        {
-            <article>
-                <h3>@roadmap.Title</h3>
-                <div style="margin-bottom: 0.5rem;">
-                    @if (roadmap.IsPublic)
-                    {
-                        <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Общая библиотека</span>
-                    }
-                    else
-                    {
-                        <span style="background: #f0fdf4; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Личная</span>
-                    }
+    <h1 class="h3 text-dark fw-bold mb-4">Поиск</h1>
+    
+    <section class="card p-4 border border-light-subtle rounded-4 shadow-sm bg-white mb-4">
+        <form @onsubmit="RunSearch" @onsubmit:preventDefault="true">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <input type="text" class="form-control text-sm" style="font-size: 0.95rem; height: 42px; border-radius: 8px;" placeholder="Поиск roadmap, узлов, пользователей..." @bind="q" />
                 </div>
-                <p>@roadmap.Category · @roadmap.Difficulty · @roadmap.Progress%</p>
-                <a href="/canvas/@roadmap.Id">Открыть</a>
-            </article>
+                
+                <div class="col-12 col-sm-6 col-md-2">
+                    <select class="form-select text-sm" style="font-size: 0.95rem; height: 42px; border-radius: 8px;" @bind="difficulty">
+                        <option value="">Сложность: любая</option>
+                        <option>Beginner</option>
+                        <option>Intermediate</option>
+                        <option>Advanced</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-sm-6 col-md-2">
+                    <input type="text" class="form-control text-sm" style="font-size: 0.95rem; height: 42px; border-radius: 8px;" placeholder="Категория" @bind="category" />
+                </div>
+                
+                <div class="col-12 col-sm-6 col-md-2">
+                    <select class="form-select text-sm" style="font-size: 0.95rem; height: 42px; border-radius: 8px;" @bind="searchScope">
+                        <option value="all">Искать везде</option>
+                        <option value="my">Мои дорожные карты</option>
+                        <option value="public">Общая библиотека</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-sm-6 col-md-2">
+                    <button type="submit" class="btn btn-primary fw-bold text-white w-100 rounded-3" style="height: 42px;">Найти</button>
+                </div>
+            </div>
+        </form>
+    </section>
+
+    <section class="w-100">
+        @if (isSearched && !items.Any())
+        {
+            <div class="p-4 bg-white border rounded-3 text-center text-muted shadow-sm">
+                Ничего не найдено по вашему запросу.
+            </div>
         }
-    </div>
-</section>
+        
+        <div class="row g-3">
+            @foreach (var roadmap in items)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card h-100 bg-white border border-light-subtle rounded-3 p-4 d-flex flex-column justify-content-between shadow-sm">
+                        <div>
+                            <div class="mb-2">
+                                @if (roadmap.IsPublic)
+                                {
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle py-1 px-2 rounded small fw-bold" style="font-size: 0.75rem;">Общая библиотека</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle py-1 px-2 rounded small fw-bold" style="font-size: 0.75rem;">Личная</span>
+                                }
+                            </div>
+                            <h3 class="h6 text-dark fw-bold text-truncate mb-2" title="@roadmap.Title">@roadmap.Title</h3>
+                            <p class="text-secondary small mb-4">@roadmap.Category · @roadmap.Difficulty · @roadmap.Progress%</p>
+                        </div>
+                        <div class="pt-2 border-top border-light-subtle text-end">
+                            <a href="/canvas/@roadmap.Id" class="btn btn-sm btn-outline-primary px-3 rounded-3 fw-semibold">Открыть</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
 
 @code {
     private string q = "";
