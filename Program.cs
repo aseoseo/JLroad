@@ -98,6 +98,25 @@ builder.Services
 
 var app = builder.Build();
 
+// Автоматическое применение миграций при старте контейнера на Railway
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<JIroad.Data.AppDbContext>();
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            context.Database.Migrate();
+            Console.WriteLine("🚀 [MIGRATION SUCCESS]: База данных Railway успешно обновлена!");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ [MIGRATION ERROR]: Ошибка обновления базы данных: {ex.Message}");
+    }
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
