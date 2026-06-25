@@ -291,10 +291,14 @@ api.MapPost("/auth/login", async (AuthRequest request, AppDbContext db, IPasswor
     {
         return Results.Unauthorized();
     }
-    var verify = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-    if (verify == PasswordVerificationResult.Failed)
+    // Если в базе лежит чистый текст (наш хак) — пускаем напрямую, иначе проверяем хэшером
+    if (user.PasswordHash != request.Password)
     {
-        return Results.Unauthorized();
+        var verify = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+        if (verify == PasswordVerificationResult.Failed)
+        {
+            return Results.Unauthorized();
+        }
     }
     return Results.Ok(new AuthResponse(jwt.Create(user), user.Email, user.Role));
 });
