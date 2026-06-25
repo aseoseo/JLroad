@@ -14,32 +14,32 @@
 
 <section class="panel page-enter px-2 px-md-3">
     <div style="margin-bottom: 1.5rem;">
-        <h2 style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">🤖 Генерация дорожной карты через ИИ</h2>
-        <p class="fine" style="margin-top: 0.35rem;">Укажите желаемую цель, и нейросеть автоматически спроектирует оптимальные этапы обучения, связи между ними и подберет полезные материалы.</p>
+        <h2 style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">🤖 Generation via AI</h2>
+        <p class="fine" style="margin-top: 0.35rem;">Укажите желаемую цель, и нейросеть автоматически спроектирует оптимальные этапы обучения.</p>
     </div>
 
     <form @onsubmit="HandleGenerateSubmit" @onsubmit:preventDefault="true">
         <div class="editor container-fluid m-0" style="max-width: 650px; background: #ffffff; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 12px;">
             <div class="row g-3">
-
+                
                 <div class="col-12">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">🎯 Какую технологию или профессию хотите освоить?</label>
-                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;"
-                           @bind="goal"
-                           placeholder="Например: Изучить C# и ASP.NET Core до уровня Junior"
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">🎯 Цель освоения:</label>
+                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
+                           @bind="goal" 
+                           placeholder="Например: Изучить C# и ASP.NET Core" 
                            disabled="@isGenerating" required />
                 </div>
 
                 <div class="col-12">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">⏱️ Сколько времени вы готовы выделить (Таймлайн)?</label>
-                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;"
-                           @bind="timeline"
-                           placeholder="Например: 2 месяца, по 15 часов в неделю"
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">⏱️ Таймлайн:</label>
+                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
+                           @bind="timeline" 
+                           placeholder="Например: 2 месяца" 
                            disabled="@isGenerating" required />
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📊 Текущий уровень:</label>
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📊 Уровень:</label>
                     <select class="form-select" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box; height: 38px;" @bind="currentLevel" disabled="@isGenerating">
                         <option value="Beginner">Новичок (Beginner)</option>
                         <option value="Intermediate">Средний (Intermediate)</option>
@@ -48,10 +48,10 @@
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📂 Общая категория:</label>
-                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;"
-                           @bind="category"
-                           placeholder="Например: Программирование"
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📂 Категория:</label>
+                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
+                           @bind="category" 
+                           placeholder="Например: Программирование" 
                            disabled="@isGenerating" required />
                 </div>
 
@@ -59,16 +59,16 @@
                     <button type="submit" class="cta start-btn" style="width: 100%; justify-content: center; height: 46px; font-weight: 700;" disabled="@isGenerating">
                         @if (isGenerating)
                         {
-                        <span class="save-spinner" style="margin-right: 8px;"></span>
-                        <span>🧠 ИИ строит граф связей... Подождите</span>
+                            <span class="save-spinner" style="margin-right: 8px;"></span>
+                            <span>🧠 ИИ строит граф... Подождите</span>
                         }
                         else
                         {
-                        <span>🚀 Сгенерировать и открыть карту</span>
+                            <span>🚀 Сгенерировать карту</span>
                         }
                     </button>
                 </div>
-
+                
             </div>
         </div>
     </form>
@@ -90,133 +90,128 @@
 </style>
 
 @code {
-private string goal = "";
-private string timeline = "";
-private string currentLevel = "Beginner";
-private string category = "Программирование";
-private bool isGenerating = false;
+    private string goal = "";
+    private string timeline = "";
+    private string currentLevel = "Beginner";
+    private string category = "Программирование";
+    private bool isGenerating = false;
 
-private async Task HandleGenerateSubmit()
-{
-if (isGenerating) return;
+    private async Task HandleGenerateSubmit()
+    {
+        if (isGenerating) return;
+        
+        isGenerating = true;
+        StateHasChanged();
 
-isGenerating = true;
-StateHasChanged();
+        try
+        {
+            var generatedData = await Ai.GenerateRoadmapAsync(goal.Trim(), timeline.Trim(), currentLevel, category.Trim()); 
+            
+            if (generatedData == null)
+            {
+                await Js.InvokeVoidAsync("alert", "ИИ не смог распознать запрос или превышена квота.");
+                return;
+            }
 
-try
-{
-// Прямой вызов ИИ-генерации через наш сервис без сетевых HTTP-запросов к самому себе
-var generatedData = await Ai.GenerateRoadmapAsync(goal.Trim(), timeline.Trim(), currentLevel, category.Trim());
+            int userId = 1;
 
-if (generatedData == null)
-{
-await Js.InvokeVoidAsync("alert", "ИИ не смог распознать запрос или превышена квота. Измените формулировку цели.");
-return;
-}
+            var roadmapEntity = new RoadmapEntity 
+            {
+                OwnerUserId = userId, 
+                Title = generatedData.Title, 
+                Description = generatedData.Description,
+                Category = category.Trim(), 
+                Difficulty = currentLevel, 
+                CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+                UpdatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+                Tags = "ai-generated",
+                CanvasData = "{}"
+            };
+            
+            Db.Roadmaps.Add(roadmapEntity);
+            await Db.SaveChangesAsync();
 
-// По умолчанию привязываем карту к главному аккаунту ментора (ID = 1)
-int userId = 1;
-
-var roadmapEntity = new RoadmapEntity
-{
-OwnerUserId = userId,
-Title = generatedData.Title,
-Description = generatedData.Description,
-Category = category.Trim(),
-Difficulty = currentLevel,
-CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
-UpdatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
-Tags = "ai-generated",
-CanvasData = "{}"
-};
-
-Db.Roadmaps.Add(roadmapEntity);
-await Db.SaveChangesAsync();
-
-var idMap = new Dictionary<int, int>();
-var nodesList = generatedData.Nodes;
-
-for (int i = 0; i < nodesList.Count; i++)
-{
-var aiNode = nodesList[i];
-double level = i / 3;
-double branch = i % 3;
-
-var node = new RoadmapNodeEntity
-{
-UserId = userId,
-RoadmapId = roadmapEntity.Id,
-Title = aiNode.Title,
-Description = aiNode.Description,
-Type = aiNode.Type ?? "Topic",
-Difficulty = aiNode.Difficulty ?? "Beginner",
-Status = "Planned",
-Progress = 0,
-PositionX = 100 + (branch * 300),
-PositionY = 100 + (level * 180),
-Resource = "",
-Tags = "ai"
-};
-
-Db.Nodes.Add(node);
-await Db.SaveChangesAsync();
-
-idMap[aiNode.Id] = node.Id;
-
-if (aiNode.Materials != null)
-{
-foreach (var m in aiNode.Materials)
-{
-Db.Materials.Add(new NodeMaterialEntity
-{
-UserId = userId,
-RoadmapId = roadmapEntity.Id,
-NodeId = node.Id,
-Title = m.Title,
-Description = m.Description ?? "",
-MaterialType = m.MaterialType ?? "Article",
-Url = m.Url,
-});
-}
-}
-}
-
-if (generatedData.Edges != null)
-{
-foreach (var aiEdge in generatedData.Edges)
-{
-if (idMap.ContainsKey(aiEdge.FromId) && idMap.ContainsKey(aiEdge.ToId))
-{
-Db.Edges.Add(new RoadmapEdgeEntity
-{
-UserId = userId,
-RoadmapId = roadmapEntity.Id,
-FromNodeId = idMap[aiEdge.FromId],
-ToNodeId = idMap[aiEdge.ToId],
-EdgeType = "Solid",
-Thickness = 2,
-Color = "#6078a8"
-});
-}
-}
-}
-
-await Db.SaveChangesAsync();
-
-// Мгновенный переход на созданный холст
-Nav.NavigateTo($"/canvas/{roadmapEntity.Id}");
-}
-catch (Exception ex)
-{
-Console.WriteLine($"[AI Generation Error]: {ex.Message}");
-await Js.InvokeVoidAsync("alert", "Ошибка при сохранении графа в базу данных.");
-}
-finally
-{
-isGenerating = false;
-StateHasChanged();
-}
-}
-
-
+            var idMap = new Dictionary<int, int>();
+            var nodesList = generatedData.Nodes;
+            
+            for (int i = 0; i < nodesList.Count; i++)
+            {
+                var aiNode = nodesList[i];
+                double level = i / 3; 
+                double branch = i % 3;
+                
+                var node = new RoadmapNodeEntity 
+                {
+                    UserId = userId, 
+                    RoadmapId = roadmapEntity.Id, 
+                    Title = aiNode.Title,
+                    Description = aiNode.Description, 
+                    Type = aiNode.Type ?? "Topic", 
+                    Difficulty = aiNode.Difficulty ?? "Beginner",
+                    Status = "Planned", 
+                    Progress = 0,
+                    PositionX = 100 + (branch * 300), 
+                    PositionY = 100 + (level * 180),
+                    Resource = "",
+                    Tags = "ai"
+                };
+                
+                Db.Nodes.Add(node);
+                await Db.SaveChangesAsync(); 
+                
+                idMap[aiNode.Id] = node.Id;
+                
+                if (aiNode.Materials != null)
+                {
+                    foreach (var m in aiNode.Materials)
+                    {
+                        Db.Materials.Add(new NodeMaterialEntity 
+                        {
+                            UserId = userId, 
+                            RoadmapId = roadmapEntity.Id, 
+                            NodeId = node.Id,
+                            Title = m.Title, 
+                            Description = m.Description ?? "", 
+                            MaterialType = m.MaterialType ?? "Article", 
+                            Url = m.Url
+                            // ИСПРАВЛЕНО: CreatedAtUtc полностью удален
+                        });
+                    }
+                }
+            }
+            
+            if (generatedData.Edges != null)
+            {
+                foreach (var aiEdge in generatedData.Edges)
+                {
+                    if (idMap.ContainsKey(aiEdge.FromId) && idMap.ContainsKey(aiEdge.ToId))
+                    {
+                        Db.Edges.Add(new RoadmapEdgeEntity 
+                        {
+                            UserId = userId, 
+                            RoadmapId = roadmapEntity.Id,
+                            FromNodeId = idMap[aiEdge.FromId], 
+                            ToNodeId = idMap[aiEdge.ToId],
+                            EdgeType = "Solid", 
+                            Thickness = 2, 
+                            Color = "#6078a8"
+                        });
+                    }
+                }
+            }
+            
+            await Db.SaveChangesAsync();
+            Nav.NavigateTo($"/canvas/{roadmapEntity.Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AI Generation Error]: {ex.Message}");
+            await Js.InvokeVoidAsync("alert", "Ошибка при сохранении графа.");
+        }
+        finally
+        {
+            isGenerating = false;
+            StateHasChanged();
+        }
+    }
 }

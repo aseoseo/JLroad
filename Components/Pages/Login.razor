@@ -60,17 +60,16 @@
         isSubmitting = true;
         errorMessage = "";
         
-        // ИСПРАВЛЕНО: Используем loginModel вместо request
+        // ИСПРАВЛЕНО: Прямое сопоставление через loginModel
         if (loginModel != null && !string.IsNullOrEmpty(loginModel.Email) && loginModel.Email.Trim().ToLower() == "mentor@jiroad.by" && loginModel.Password == "Password123!")
         {
             await Js.InvokeVoidAsync("jiroad.saveToken", "FAKE_DEVELOPMENT_TOKEN_SECRET_VALID");
-            Nav.NavigateTo("/dashboard");
+            Nav.NavigateTo("/mentor/dashboard");
             return;
         }
         
         try
         {
-            // Умное переключение BaseAddress, если код выполняется внутри Docker-контейнера
             string baseAddress = Nav.BaseUri;
             if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
             {
