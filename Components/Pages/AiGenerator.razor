@@ -5,6 +5,7 @@
 @using System.Text.Json.Serialization
 @inject IJSRuntime Js
 @inject NavigationManager Nav
+@inject IHttpClientFactory HttpClientFactory
 
 <PageTitle>ИИ Генератор треков | JIroad</PageTitle>
 
@@ -108,14 +109,10 @@
                 return;
             }
 
-            // ИСПРАВЛЕНО ДЛЯ DOCKER: Динамический роутинг сетевого адреса бэкенда внутри контейнера
-            string baseAddress = Nav.BaseUri;
-            if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
-            {
-                baseAddress = "http://127.0.0.1:8080/";
-            }
-
-            using var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+            // ИСПОЛЬЗУЕМ СТАНДАРТНЫЙ КЛИЕНТ: Nav.BaseUri всегда корректен для внешних запросов
+            // фабрика избавит бэкенд от проблем с внутренними Docker портами
+            var http = HttpClientFactory.CreateClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var payload = new
@@ -126,7 +123,7 @@
                 Category = category.Trim()
             };
 
-            var response = await http.PostAsJsonAsync("/api/roadmap/ai/generate", payload);
+            var response = await http.PostAsJsonAsync("api/roadmap/ai/generate", payload);
             
             if (response.IsSuccessStatusCode)
             {
