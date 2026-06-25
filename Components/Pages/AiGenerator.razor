@@ -14,8 +14,8 @@
 
 <section class="panel page-enter px-2 px-md-3">
     <div style="margin-bottom: 1.5rem;">
-        <h2 style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">🤖 Generation via AI</h2>
-        <p class="fine" style="margin-top: 0.35rem;">Укажите желаемую цель, и нейросеть автоматически спроектирует оптимальные этапы обучения.</p>
+        <h2 style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">🤖 Генерация дорожной карты через ИИ</h2>
+        <p class="fine" style="margin-top: 0.35rem;">Укажите желаемую цель, и нейросеть автоматически спроектирует оптимальные этапы обучения, связи между ними и подберет полезные материалы.</p>
     </div>
 
     <form @onsubmit="HandleGenerateSubmit" @onsubmit:preventDefault="true">
@@ -23,23 +23,23 @@
             <div class="row g-3">
                 
                 <div class="col-12">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">🎯 Цель освоения:</label>
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">🎯 Какую технологию или профессию хотите освоить?</label>
                     <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
                            @bind="goal" 
-                           placeholder="Например: Изучить C# и ASP.NET Core" 
+                           placeholder="Например: Изучить C# и ASP.NET Core до уровня Junior" 
                            disabled="@isGenerating" required />
                 </div>
 
                 <div class="col-12">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">⏱️ Таймлайн:</label>
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">⏱️ Сколько времени вы готовы выделить (Таймлайн)?</label>
                     <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
                            @bind="timeline" 
-                           placeholder="Например: 2 месяца" 
+                           placeholder="Например: 2 месяца, по 15 часов в неделю" 
                            disabled="@isGenerating" required />
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📊 Уровень:</label>
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📊 Текущий уровень:</label>
                     <select class="form-select" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box; height: 38px;" @bind="currentLevel" disabled="@isGenerating">
                         <option value="Beginner">Новичок (Beginner)</option>
                         <option value="Intermediate">Средний (Intermediate)</option>
@@ -48,7 +48,7 @@
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📂 Категория:</label>
+                    <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📂 Общая категория:</label>
                     <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
                            @bind="category" 
                            placeholder="Например: Программирование" 
@@ -60,11 +60,11 @@
                         @if (isGenerating)
                         {
                             <span class="save-spinner" style="margin-right: 8px;"></span>
-                            <span>🧠 ИИ строит граф... Подождите</span>
+                            <span>🧠 ИИ строит граф связей... Подождите</span>
                         }
                         else
                         {
-                            <span>🚀 Сгенерировать карту</span>
+                            <span>🚀 Сгенерировать и открыть карту</span>
                         }
                     </button>
                 </div>
@@ -109,17 +109,18 @@
             
             if (generatedData == null)
             {
-                await Js.InvokeVoidAsync("alert", "ИИ не смог распознать запрос или превышена квота.");
+                await Js.InvokeVoidAsync("alert", "ИИ не смог построить карту. Попробуйте еще раз с более точной целью.");
                 return;
             }
 
+            // Задаем ID ментора (по умолчанию = 1)
             int userId = 1;
 
             var roadmapEntity = new RoadmapEntity 
             {
                 OwnerUserId = userId, 
-                Title = generatedData.Title, 
-                Description = generatedData.Description,
+                Title = !string.IsNullOrWhiteSpace(generatedData.Title) ? generatedData.Title : goal.Trim(), 
+                Description = !string.IsNullOrWhiteSpace(generatedData.Description) ? generatedData.Description : "Автоматически сгенерированный трек обучения.",
                 Category = category.Trim(), 
                 Difficulty = currentLevel, 
                 CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
@@ -129,10 +130,10 @@
             };
             
             Db.Roadmaps.Add(roadmapEntity);
-            await Db.SaveChangesAsync();
+            await Db.SaveChangesAsync(); // Сохраняем карту, чтобы получить её верифицированный Id
 
             var idMap = new Dictionary<int, int>();
-            var nodesList = generatedData.Nodes;
+            var nodesList = generatedData.Nodes ?? new List<AiParsedNode>();
             
             for (int i = 0; i < nodesList.Count; i++)
             {
@@ -144,37 +145,39 @@
                 {
                     UserId = userId, 
                     RoadmapId = roadmapEntity.Id, 
-                    Title = aiNode.Title,
-                    Description = aiNode.Description, 
+                    Title = !string.IsNullOrWhiteSpace(aiNode.Title) ? aiNode.Title : $"Этап {i + 1}",
+                    Description = !string.IsNullOrWhiteSpace(aiNode.Description) ? aiNode.Description : "Изучение концепций и инструментов темы.", 
                     Type = aiNode.Type ?? "Topic", 
-                    Difficulty = aiNode.Difficulty ?? "Beginner",
+                    Difficulty = aiNode.Difficulty ?? currentLevel,
                     Status = "Planned", 
                     Progress = 0,
-                    PositionX = 100 + (branch * 300), 
-                    PositionY = 100 + (level * 180),
+                    PositionX = 100 + (branch * 320), 
+                    PositionY = 120 + (level * 200),
                     Resource = "",
                     Tags = "ai"
                 };
                 
                 Db.Nodes.Add(node);
-                await Db.SaveChangesAsync(); 
+                await Db.SaveChangesAsync(); // База генерирует уникальный Id для Postgres
                 
+                // Безопасно связываем исходный ИИ-идентификатор с реальным ключом базы данных
                 idMap[aiNode.Id] = node.Id;
                 
                 if (aiNode.Materials != null)
                 {
                     foreach (var m in aiNode.Materials)
                     {
+                        if (string.IsNullOrEmpty(m.Url)) continue;
+                        
                         Db.Materials.Add(new NodeMaterialEntity 
                         {
                             UserId = userId, 
                             RoadmapId = roadmapEntity.Id, 
                             NodeId = node.Id,
-                            Title = m.Title, 
+                            Title = !string.IsNullOrWhiteSpace(m.Title) ? m.Title : "Учебный ресурс", 
                             Description = m.Description ?? "", 
                             MaterialType = m.MaterialType ?? "Article", 
                             Url = m.Url
-                            // ИСПРАВЛЕНО: CreatedAtUtc полностью удален
                         });
                     }
                 }
@@ -184,14 +187,15 @@
             {
                 foreach (var aiEdge in generatedData.Edges)
                 {
-                    if (idMap.ContainsKey(aiEdge.FromId) && idMap.ContainsKey(aiEdge.ToId))
+                    // ИСПРАВЛЕНО: Безопасное извлечение ключей через TryGetValue исключает вылет по ошибке
+                    if (idMap.TryGetValue(aiEdge.FromId, out int realFromId) && idMap.TryGetValue(aiEdge.ToId, out int realToId))
                     {
                         Db.Edges.Add(new RoadmapEdgeEntity 
                         {
                             UserId = userId, 
                             RoadmapId = roadmapEntity.Id,
-                            FromNodeId = idMap[aiEdge.FromId], 
-                            ToNodeId = idMap[aiEdge.ToId],
+                            FromNodeId = realFromId, 
+                            ToNodeId = realToId,
                             EdgeType = "Solid", 
                             Thickness = 2, 
                             Color = "#6078a8"
@@ -200,13 +204,15 @@
                 }
             }
             
-            await Db.SaveChangesAsync();
+            await Db.SaveChangesAsync(); // Финальное сохранение связей
+            
+            // Мгновенный переход на созданный холст
             Nav.NavigateTo($"/canvas/{roadmapEntity.Id}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AI Generation Error]: {ex.Message}");
-            await Js.InvokeVoidAsync("alert", "Ошибка при сохранении графа.");
+            Console.WriteLine($"[CRITICAL AI GENERATION FAIL]: {ex.Message} \n {ex.StackTrace}");
+            await Js.InvokeVoidAsync("alert", "Ошибка при обработке и сохранении графа в базу данных.");
         }
         finally
         {
