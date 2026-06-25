@@ -113,8 +113,10 @@
                 return;
             }
 
-            // Задаем ID ментора (по умолчанию = 1)
             int userId = 1;
+
+            // ИСПРАВЛЕНО: Задаем полноценную дефолтную структуру для CanvasData, чтобы фронтенд Blazor не падал
+            string initialCanvasStructure = "{\"zoom\":1,\"panX\":0,\"panY\":0,\"nodes\":[],\"connections\":[]}";
 
             var roadmapEntity = new RoadmapEntity 
             {
@@ -126,11 +128,11 @@
                 CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
                 UpdatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
                 Tags = "ai-generated",
-                CanvasData = "{}"
+                CanvasData = initialCanvasStructure
             };
             
             Db.Roadmaps.Add(roadmapEntity);
-            await Db.SaveChangesAsync(); // Сохраняем карту, чтобы получить её верифицированный Id
+            await Db.SaveChangesAsync(); 
 
             var idMap = new Dictionary<int, int>();
             var nodesList = generatedData.Nodes ?? new List<AiParsedNode>();
@@ -151,16 +153,15 @@
                     Difficulty = aiNode.Difficulty ?? currentLevel,
                     Status = "Planned", 
                     Progress = 0,
-                    PositionX = 100 + (branch * 320), 
-                    PositionY = 120 + (level * 200),
+                    PositionX = 150 + (branch * 340), 
+                    PositionY = 150 + (level * 220),
                     Resource = "",
                     Tags = "ai"
                 };
                 
                 Db.Nodes.Add(node);
-                await Db.SaveChangesAsync(); // База генерирует уникальный Id для Postgres
+                await Db.SaveChangesAsync(); 
                 
-                // Безопасно связываем исходный ИИ-идентификатор с реальным ключом базы данных
                 idMap[aiNode.Id] = node.Id;
                 
                 if (aiNode.Materials != null)
@@ -187,7 +188,6 @@
             {
                 foreach (var aiEdge in generatedData.Edges)
                 {
-                    // ИСПРАВЛЕНО: Безопасное извлечение ключей через TryGetValue исключает вылет по ошибке
                     if (idMap.TryGetValue(aiEdge.FromId, out int realFromId) && idMap.TryGetValue(aiEdge.ToId, out int realToId))
                     {
                         Db.Edges.Add(new RoadmapEdgeEntity 
@@ -204,14 +204,14 @@
                 }
             }
             
-            await Db.SaveChangesAsync(); // Финальное сохранение связей
+            await Db.SaveChangesAsync(); 
             
-            // Мгновенный переход на созданный холст
+            // Выполняем переход на холст
             Nav.NavigateTo($"/canvas/{roadmapEntity.Id}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CRITICAL AI GENERATION FAIL]: {ex.Message} \n {ex.StackTrace}");
+            Console.WriteLine($"[CRITICAL AI GENERATION FAIL]: {ex.Message}");
             await Js.InvokeVoidAsync("alert", "Ошибка при обработке и сохранении графа в базу данных.");
         }
         finally
