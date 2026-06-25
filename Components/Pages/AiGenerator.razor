@@ -21,7 +21,7 @@
                 
                 <div class="col-12">
                     <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">🎯 Какую технологию или профессию хотите освоить?</label>
-                    <input type="text" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
+                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
                            @bind="goal" 
                            placeholder="Например: Изучить C# и ASP.NET Core до уровня Junior" 
                            disabled="@isGenerating" required />
@@ -29,7 +29,7 @@
 
                 <div class="col-12">
                     <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">⏱️ Сколько времени вы готовы выделить (Таймлайн)?</label>
-                    <input type="text" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
+                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
                            @bind="timeline" 
                            placeholder="Например: 2 месяца, по 15 часов в неделю" 
                            disabled="@isGenerating" required />
@@ -37,7 +37,7 @@
 
                 <div class="col-12 col-md-6">
                     <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📊 Текущий уровень:</label>
-                    <select style="width: 100%; margin-top: 0.4rem; box-sizing: border-box; height: 38px;" @bind="currentLevel" disabled="@isGenerating">
+                    <select class="form-select" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box; height: 38px;" @bind="currentLevel" disabled="@isGenerating">
                         <option value="Beginner">Новичок (Beginner)</option>
                         <option value="Intermediate">Средний (Intermediate)</option>
                         <option value="Advanced">Продвинутый (Advanced)</option>
@@ -46,7 +46,7 @@
 
                 <div class="col-12 col-md-6">
                     <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">📂 Общая категория:</label>
-                    <input type="text" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
+                    <input type="text" class="form-control" style="width: 100%; margin-top: 0.4rem; box-sizing: border-box;" 
                            @bind="category" 
                            placeholder="Например: Программирование" 
                            disabled="@isGenerating" required />
@@ -109,8 +109,7 @@
                 return;
             }
 
-            // ИСПОЛЬЗУЕМ СТАНДАРТНЫЙ КЛИЕНТ: Nav.BaseUri всегда корректен для внешних запросов
-            // фабрика избавит бэкенд от проблем с внутренними Docker портами
+            // Безопасное получение HTTP-клиента через фабрику .NET
             var http = HttpClientFactory.CreateClient();
             http.BaseAddress = new Uri(Nav.BaseUri);
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);

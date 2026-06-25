@@ -12,94 +12,110 @@ public class AiService
     public AiService(HttpClient http, IConfiguration config)
     {
         _http = http;
+        // Считываем ключ из конфигурации (в Railway это будет Gemini__ApiKey)
         _apiKey = config["Gemini:ApiKey"] ?? "";
     }
 
-    // Существующий метод генерации дорожной карты (НЕ УДАЛЕНО)
     public async Task<AiRoadmapData?> GenerateRoadmapAsync(string goal, string timeline, string currentLevel, string category)
     {
-        var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={_apiKey}";
-
-        var prompt = $@"
-    Ты — эксперт-ментор. Составь исчерпывающую и полноценную карту для достижения цели: {goal}.
-        Сроки: {timeline}, уровень: {currentLevel}, категория: {category}.
-Требования:
-1. Включи ВСЕ необходимые темы, подтемы, инструменты, библиотеки и практические проекты. 
-2. Не ограничивай количество узлов. Создай столько, сколько нужно для глубокого освоения темы.
-3. Структурируй их логически: от фундаментальных основ до узкоспециализированных навыков.
-4. Создай связи (edges) так, чтобы они формировали полноценный граф знаний с ветвлениями.
-5. Верни ответ СТРОГО в формате JSON.
-        Верни JSON:
-        {{
-            ""title"": ""{goal}"",
-            ""nodes"": [
-            {{ ""id"": 1, ""title"": ""Основы"", ""description"": ""..."", ""type"": ""Topic"", ""materials"": [{{ ""title"": ""Wiki"", ""url"": ""..."" }}] }}
-            ],
-            ""edges"": [{{ ""fromId"": 1, ""toId"": 2 }}]
-        }}
-        Важно: связи должны строить иерархическое дерево.";
-
-        var requestBody = new
+        if (string.IsNullOrEmpty(_apiKey))
         {
-            contents = new[] { new { parts = new[] { new { text = prompt } } } }
-        };
-
-        var response = await _http.PostAsJsonAsync(endpoint, requestBody);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Ошибка API: {error}");
+            Console.WriteLine("[AI ERROR]: API Key (Gemini:ApiKey) пустой или не найден в конфигурации!");
             return null;
         }
 
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(jsonResponse);
-        var text = document.RootElement
-            .GetProperty("candidates")[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString();
-
-        var cleanJson = text!.Replace("```json", "").Replace("```", "").Trim();
-        return JsonSerializer.Deserialize<AiRoadmapData>(cleanJson,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-    }
-
-    // ОБНОВЛЕНО: Генерация масштабных тестов (от 10 до 30 вопросов на каждый узел)
-    public async Task<AiRoadmapTestsContainer?> GenerateMultipleTestsAsync(string roadmapTitle, List<string> nodesWithMaterials)
-    {
-        var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={_apiKey}";
+        var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
 
         var prompt = $@"
-Ты — профессиональный технический экзаменатор высшей квалификации. Твоя задача — проанализировать каждый отдельный узел (этап обучения) дорожной карты и сгенерировать ИНДИВИДУАЛЬНЫЕ, подробные и объемные проверочные тесты для каждого из них.
-Особенно внимательно изучи прикрепленные к узлам ссылки (URL) и названия материалов — вопросы должны досконально проверять знание концепций, заложенных в этих источниках.
+Ты — эксперт-ментор. Составь исчерпывающую и полноценную карту для достижения цели: {goal}.
+Сроки: {timeline}, уровень: {currentLevel}, категория: {category}.
+Требования:
+1. Включи все необходимые темы, подтемы, инструменты и практические проекты.
+2. Не ограничивай количество узлов. Создай столько, сколько нужно для глубокого освоения темы.
+3. Структурируй их логически: от фундаментальных основ до узкоспециализированных навыков.
+4. Верни ответ СТРОГО в формате JSON по указанной схеме.
 
-Название дорожной карты: {roadmapTitle}
-Список узлов и их материалов для анализа:
-{string.Join("\n\n", nodesWithMaterials)}
+Схема JSON:
+{{
+    ""title"": ""{goal}"",
+    ""nodes"": [
+        {{ ""id"": 1, ""title"": ""Название темы"", ""description"": ""Описание"", ""type"": ""Topic"", ""materials"": [{{ ""title"": ""Документация"", ""url"": ""https://example.com"" }}] }}
+    ],
+    ""edges"": [{{ ""fromId"": 1, ""toId"": 2 }}]
+}}";
 
-Требования к генерации вопросов:
-1. Для каждого предоставленного узла создай один полноценный тест.
-2. КАЖДЫЙ ТЕСТ ДОЛЖЕН СОДЕРЖАТЬ МИНИМУМ 10–15 ВОПРОСОВ (МАКСИМУМ 30 ВОПРОСОВ), если объем темы и прикрепленных ссылок/материалов позволяет сделать глубокую проверку. Вопросы не должны быть поверхностными. Они должны охватывать синтаксис, архитектуру, практические кейсы и подводные камни темы, описанной в статьях по ссылкам.
-3. Для каждого вопроса создай ровно 3 варианта ответа. Строго у ОДНОГО варианта флаг ""isCorrect"" должен быть true, у остальных двух — false.
-4. Верни ответ СТРОГО в формате JSON, без какого-либо текстового или markdown-обрамления (не пиши ```json в начале).
+        // ДОБАВЛЕНО ТРЕБОВАНИЕ JSON MIME-TYPE НА УРОВНЕ API GOOGLE
+        var requestBody = new
+        {
+            contents = new[] { new { parts = new[] { new { text = prompt } } } },
+            generationConfig = new
+            {
+                responseMimeType = "application/json"
+            }
+        };
 
-Формат ответа JSON:
+        try
+        {
+            var response = await _http.PostAsJsonAsync(endpoint, requestBody);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Ошибка API Gemini (Roadmap): {error}");
+                return null;
+            }
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(jsonResponse);
+            var text = document.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString();
+
+            if (string.IsNullOrWhiteSpace(text)) return null;
+
+            return JsonSerializer.Deserialize<AiRoadmapData>(text.Trim(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AiService Exception]: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<AiRoadmapTestsContainer?> GenerateMultipleTestsAsync(string roadmapTitle, List<string> nodesWithMaterials)
+    {
+        if (string.IsNullOrEmpty(_apiKey)) return null;
+
+        var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
+
+        var prompt = $@"
+Ты — профессиональный технический экзаменатор. Твоя задача — сгенерировать короткие проверочные тесты для узлов дорожной карты.
+Название карты: {roadmapTitle}
+Узлы: {string.Join(", ", nodesWithMaterials)}
+
+Требования:
+1. Для каждого узла создай тест из 3-5 вопросов (для экономии токенов квоты).
+2. Для каждого вопроса создай ровно 3 варианта ответа. Строго у одного флага ""isCorrect"" должен быть true.
+3. Верни ответ СТРОГО в формате JSON.
+
+Схема JSON:
 {{
     ""tests"": [
         {{
-            ""nodeTitle"": ""Точное название узла из списка"",
-            ""title"": ""🤖 Тест: [Название узла]"",
-            ""description"": ""Комплексный срез знаний (10+ вопросов) по материалам и ссылкам темы: [Название узла]"",
+            ""nodeTitle"": ""Название узла"",
+            ""title"": ""Тест по теме"",
+            ""description"": ""Проверка знаний"",
             ""questions"": [
                 {{
-                    ""questionText"": ""Глубокий технический вопрос, проверяющий знание материала по этой ссылке/теме..."",
+                    ""questionText"": ""Текст вопроса?"",
                     ""options"": [
-                        {{ ""optionText"": ""Вариант правильного ответа"", ""isCorrect"": true }},
-                        {{ ""optionText"": ""Вариант ложного ответа"", ""isCorrect"": false }},
-                        {{ ""optionText"": ""Еще один ложный вариант ответа"", ""isCorrect"": false }}
+                        {{ ""optionText"": ""Правильный ответ"", ""isCorrect"": true }},
+                        {{ ""optionText"": ""Неверный ответ"", ""isCorrect"": false }},
+                        {{ ""optionText"": ""Еще неверный"", ""isCorrect"": false }}
                     ]
                 }}
             ]
@@ -109,29 +125,42 @@ public class AiService
 
         var requestBody = new
         {
-            contents = new[] { new { parts = new[] { new { text = prompt } } } }
+            contents = new[] { new { parts = new[] { new { text = prompt } } } },
+            generationConfig = new
+            {
+                responseMimeType = "application/json"
+            }
         };
 
-        var response = await _http.PostAsJsonAsync(endpoint, requestBody);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Ошибка API при генерации множества тестов: {error}");
+            var response = await _http.PostAsJsonAsync(endpoint, requestBody);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Ошибка API Gemini (Tests): {error}");
+                return null;
+            }
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(jsonResponse);
+            var text = document.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString();
+
+            if (string.IsNullOrWhiteSpace(text)) return null;
+
+            return JsonSerializer.Deserialize<AiRoadmapTestsContainer>(text.Trim(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AiService Tests Exception]: {ex.Message}");
             return null;
         }
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(jsonResponse);
-        var text = document.RootElement
-            .GetProperty("candidates")[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString();
-
-        var cleanJson = text!.Replace("```json", "").Replace("```", "").Trim();
-        return JsonSerializer.Deserialize<AiRoadmapTestsContainer>(cleanJson,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
     }
 }
