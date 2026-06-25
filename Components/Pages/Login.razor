@@ -60,16 +60,9 @@
         isSubmitting = true;
         errorMessage = "";
         
-        // ИСПРАВЛЕНО: Прямое сопоставление через loginModel
-        if (loginModel != null && !string.IsNullOrEmpty(loginModel.Email) && loginModel.Email.Trim().ToLower() == "mentor@jiroad.by" && loginModel.Password == "Password123!")
-        {
-            await Js.InvokeVoidAsync("jiroad.saveToken", "FAKE_DEVELOPMENT_TOKEN_SECRET_VALID");
-            Nav.NavigateTo("/mentor/dashboard");
-            return;
-        }
-        
         try
         {
+            // Используем динамический BaseUri для Docker
             string baseAddress = Nav.BaseUri;
             if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
             {
@@ -77,6 +70,8 @@
             }
 
             using var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+            
+            // Отправляем честный запрос на бэкенд для генерации легального JWT-токена
             var response = await http.PostAsJsonAsync("/api/auth/login", loginModel);
             
             if (response.IsSuccessStatusCode)
@@ -84,6 +79,7 @@
                 var authData = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
                 if (authData != null)
                 {
+                    // Сохраняем НАСТОЯЩИЙ токен, содержащий ID ментора!
                     await Js.InvokeVoidAsync("jiroad.saveToken", authData.Token);
                     
                     if (authData.Role == "Mentor")
@@ -98,7 +94,7 @@
             }
             else
             {
-                errorMessage = "Unauthorized";
+                errorMessage = "Неверный Email или пароль.";
             }
         }
         catch (Exception ex)
