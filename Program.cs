@@ -1361,26 +1361,34 @@ roadmap.MapPost("/{id:int}/tests/ai-generate", async (int id, ClaimsPrincipal pr
     return Results.Ok(new { Success = true, CreatedTestsCount = generatedContainer.Tests.Count });
 });
 
-roadmap.MapPost("/mentor/students/add", async (ClaimsPrincipal principal, [FromBody] JsonElement payload, AppDbContext db) =>
+// Исправленная и стабильная привязка студентов/самообучающихся по Email
+roadmap.MapPost("/mentor/students/add", async (ClaimsPrincipal principal, [FromBody] MentorAddStudentDto request, AppDbContext db) =>
 {
     var userId = GetUserId(principal);
     var role = principal.FindFirstValue(ClaimTypes.Role);
     if (role != "Mentor" && role != "Admin") return Results.Forbid();
-    if (!payload.TryGetProperty("email", out var emailProp))
+    
+    if (string.IsNullOrWhiteSpace(request.Email))
         return Results.BadRequest("Email configuration is missing.");
-        
-    var emailStr = emailProp.GetString();
-    if (string.IsNullOrWhiteSpace(emailStr))
-        return Results.BadRequest("Email configuration is empty.");
 
-    var studentEmail = emailStr.Trim().ToLowerInvariant();
+    var studentEmail = request.Email.Trim().ToLowerInvariant();
     var student = await db.Users.FirstOrDefaultAsync(u => u.Email == studentEmail); 
+    
     if (student is null) return Results.NotFound("Student email records not found.");
-    if (student.Role != "Student") return Results.BadRequest("Assigned user role mismatch.");
+    
+    // ИСПРАВЛЕНО: Теперь разрешаем ментору привязывать и обычных Students, и SelfTaught (самообучающихся)
+    if (student.Role != "Student" && student.Role != "SelfTaught") 
+        return Results.BadRequest("Assigned user role mismatch.");
+        
     var alreadyExists = await db.MentorStudents.AnyAsync(ms => ms.MentorUserId == userId && ms.StudentUserId == student.Id);
     if (alreadyExists) return Results.Conflict("Student configuration already tied.");
     
-    db.MentorStudents.Add(new MentorStudentEntity { MentorUserId = userId, StudentUserId = student.Id, AssignedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc) });
+    db.MentorStudents.Add(new MentorStudentEntity { 
+        MentorUserId = userId, 
+        StudentUserId = student.Id, 
+        AssignedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc) 
+    });
+    
     await db.SaveChangesAsync();
     return Results.Ok(new { Message = "Student linked successfully!" });
 });
@@ -1811,7 +1819,7 @@ namespace JIroad.Api
     public record AssignGroupTaskRequest(int RoadmapId, string TaskType, string Title, string Content);
     public record ReviewTaskRequest(int TaskId, string Status, string Comment, bool IsGroupTask);
     public record SubmitTaskSolutionRequest(int TaskId, string Response, bool IsGroupTask);
-    
+    public record MentorAddStudentDto(string Email);
     public record TestResponse(int Id, int RoadmapId, string Title, string Description, bool IsAiGenerated, List<QuestionResponse> Questions);
     public record QuestionResponse(int Id, string QuestionText, List<OptionResponse> Options);
     public record OptionResponse(int Id, string OptionText, bool IsCorrect);
