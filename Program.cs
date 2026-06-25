@@ -669,17 +669,21 @@ roadmap.MapGet("/{roadmapId:int}/nodes", async (int roadmapId, ClaimsPrincipal p
     return Results.Ok(data);
 });
 
-roadmap.MapPost("/ai/generate", async (ClaimsPrincipal principal, AiGenerateRequest request, AppDbContext db, AiService ai) =>
+api.MapPost("/roadmap/ai/generate", async (AiGenerateRequest request, AppDbContext db, AiService ai) =>
 {
-    var userId = GetUserId(principal);
+    // Убираем ClaimsPrincipal principal и GetUserId(principal), ставим жесткий ID = 1 (аккаунт ментора)
+    var userId = 1; 
+    
     var generatedData = await ai.GenerateRoadmapAsync(request.Goal, request.Timeline, request.CurrentLevel, request.Category); 
     if (generatedData == null) return Results.BadRequest("AI Generation failed.");
+    
     var roadmapEntity = new RoadmapEntity {
         OwnerUserId = userId, Title = generatedData.Title, Description = generatedData.Description,
         Category = request.Category, Difficulty = request.CurrentLevel, CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc)
     };
     db.Roadmaps.Add(roadmapEntity);
     await db.SaveChangesAsync();
+    
     var idMap = new Dictionary<int, int>();
     var nodesList = generatedData.Nodes;
     for (int i = 0; i < nodesList.Count; i++)
@@ -718,7 +722,7 @@ roadmap.MapPost("/ai/generate", async (ClaimsPrincipal principal, AiGenerateRequ
     }
     await db.SaveChangesAsync();
     return Results.Ok(new { RoadmapId = roadmapEntity.Id });
-});
+}).AllowAnonymous(); // Разрешаем доступ без токена для демонстрации
 
 roadmap.MapPost("/nodes", async (ClaimsPrincipal principal, NodeRequest request, AppDbContext db, IHubContext<CollaborationHub> hub) =>
 {
