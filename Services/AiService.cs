@@ -24,7 +24,7 @@ public class AiService
             return null;
         }
 
-        var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
+        var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
 
         var prompt = $@"
 Ты — эксперт-ментор. Составь исчерпывающую и полноценную карту для достижения цели: {goal}.
